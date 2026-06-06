@@ -1,0 +1,79 @@
+{
+  "project_path": "examples/buggy_calculator",
+  "command": [
+    "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "returncode": 1,
+  "duration_seconds": 0.12917358300182968,
+  "passed": false,
+  "failures": [
+    {
+      "nodeid": "test_calculator.py::test_divide_rejects_zero",
+      "headline": "ZeroDivisionError: division by zero",
+      "file_path": null,
+      "line_number": null,
+      "error_type": "ZeroDivisionError",
+      "detail": "test_calculator.py:8: in test_divide_rejects_zero\n    divide(10, 0)\ncalculator.py:2: in divide\n    return a / b\n           ^^^^^\nE   ZeroDivisionError: division by zero"
+    },
+    {
+      "nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
+      "headline": "ZeroDivisionError: division by zero",
+      "file_path": null,
+      "line_number": null,
+      "error_type": "ZeroDivisionError",
+      "detail": "test_calculator.py:12: in test_average_empty_list_returns_zero\n    assert average([]) == 0\n           ^^^^^^^^^^^\ncalculator.py:6: in average\n    return sum(values) / len(values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ZeroDivisionError: division by zero"
+    }
+  ],
+  "diagnoses": [
+    {
+      "failure": {
+        "nodeid": "test_calculator.py::test_divide_rejects_zero",
+        "headline": "ZeroDivisionError: division by zero",
+        "file_path": null,
+        "line_number": null,
+        "error_type": "ZeroDivisionError",
+        "detail": "test_calculator.py:8: in test_divide_rejects_zero\n    divide(10, 0)\ncalculator.py:2: in divide\n    return a / b\n           ^^^^^\nE   ZeroDivisionError: division by zero"
+      },
+      "category": "input-validation",
+      "confidence": "medium",
+      "summary": "The implementation likely misses validation for an invalid or boundary input.",
+      "evidence": [
+        "test_calculator.py:8: in test_divide_rejects_zero",
+        "calculator.py:2: in divide",
+        "E   ZeroDivisionError: division by zero"
+      ],
+      "repair_advice": [
+        "Define the intended behavior for the boundary input: reject, clamp, or return a neutral value.",
+        "Guard the operation close to the source of the invalid value.",
+        "Document the behavior in a test so future agents preserve it."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
+        "headline": "ZeroDivisionError: division by zero",
+        "file_path": null,
+        "line_number": null,
+        "error_type": "ZeroDivisionError",
+        "detail": "test_calculator.py:12: in test_average_empty_list_returns_zero\n    assert average([]) == 0\n           ^^^^^^^^^^^\ncalculator.py:6: in average\n    return sum(values) / len(values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ZeroDivisionError: division by zero"
+      },
+      "category": "input-validation",
+      "confidence": "medium",
+      "summary": "The implementation likely misses validation for an invalid or boundary input.",
+      "evidence": [
+        "test_calculator.py:12: in test_average_empty_list_returns_zero",
+        "calculator.py:6: in average",
+        "E   ZeroDivisionError: division by zero"
+      ],
+      "repair_advice": [
+        "Define the intended behavior for the boundary input: reject, clamp, or return a neutral value.",
+        "Guard the operation close to the source of the invalid value.",
+        "Document the behavior in a test so future agents preserve it."
+      ]
+    }
+  ]
+}

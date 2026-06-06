@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+from .models import AuditReport
+
+
+def write_markdown_report(report: AuditReport, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(render_markdown(report), encoding="utf-8")
+
+
+def write_json_report(report: AuditReport, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def render_markdown(report: AuditReport) -> str:
+    status = "PASS" if report.run.passed else "FAIL"
+    lines = [
+        "# Agentic TestOps Audit Report",
+        "",
+        f"- Project: `{report.project_path}`",
+        f"- Status: **{status}**",
+        f"- Command: `{' '.join(report.run.command)}`",
+        f"- Duration: `{report.run.duration_seconds:.2f}s`",
+        f"- Return code: `{report.run.returncode}`",
+        f"- Parsed failures: `{len(report.failures)}`",
+        "",
+    ]
+
+    if report.run.passed:
+        lines.extend(["## Result", "", "All tests passed. No repair advice was generated.", ""])
+        return "\n".join(lines)
+
+    lines.extend(["## Diagnosis", ""])
+    for index, diagnosis in enumerate(report.diagnoses, start=1):
+        failure = diagnosis.failure
+        location = ""
+        if failure.file_path:
+            location = f" at `{failure.file_path}`"
+            if failure.line_number:
+                location += f":{failure.line_number}"
+        lines.extend(
+            [
+                f"### {index}. `{failure.nodeid}`",
+                "",
+                f"- Headline: {failure.headline}{location}",
+                f"- Category: `{diagnosis.category}`",
+                f"- Confidence: `{diagnosis.confidence}`",
+                f"- Summary: {diagnosis.summary}",
+                "",
+                "Evidence:",
+            ]
+        )
+        for item in diagnosis.evidence:
+            lines.append(f"- `{item}`")
+        lines.extend(["", "Repair advice:"])
+        for item in diagnosis.repair_advice:
+            lines.append(f"- {item}")
+        lines.append("")
+
+    lines.extend(
+        [
+            "## Raw Pytest Output",
+            "",
+            "```text",
+            _trim(report.run.stdout + "\n" + report.run.stderr),
+            "```",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _trim(text: str, limit: int = 12000) -> str:
+    text = text.strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit] + "\n... output truncated ..."
