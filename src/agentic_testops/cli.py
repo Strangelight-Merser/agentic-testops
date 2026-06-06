@@ -6,6 +6,7 @@ from pathlib import Path
 from .diagnoser import diagnose_failures
 from .models import AuditReport
 from .parser import parse_failures
+from .patcher import propose_patches
 from .reporter import write_json_report, write_markdown_report
 from .runner import run_pytest
 
@@ -23,6 +24,11 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--json-output", type=Path, help="Optional JSON report path.")
     audit.add_argument("--timeout", type=int, default=120, help="Pytest timeout in seconds.")
     audit.add_argument(
+        "--rerun-failures",
+        action="store_true",
+        help="After the first failing run, rerun only parsed failing pytest node IDs.",
+    )
+    audit.add_argument(
         "--pytest-arg",
         action="append",
         default=[],
@@ -38,7 +44,19 @@ def main(argv: list[str] | None = None) -> int:
         run = run_pytest(args.project, extra_args=extra_args, timeout=args.timeout)
         failures = parse_failures(run)
         diagnoses = diagnose_failures(failures, run)
-        report = AuditReport(project_path=args.project, run=run, failures=failures, diagnoses=diagnoses)
+        patch_proposals = propose_patches(diagnoses, project_path=args.project)
+        rerun = None
+        if args.rerun_failures and failures:
+            rerun_args = [failure.nodeid for failure in failures]
+            rerun = run_pytest(args.project, extra_args=rerun_args, timeout=args.timeout)
+        report = AuditReport(
+            project_path=args.project,
+            run=run,
+            failures=failures,
+            diagnoses=diagnoses,
+            patch_proposals=patch_proposals,
+            rerun=rerun,
+        )
         write_markdown_report(report, args.output)
         if args.json_output:
             write_json_report(report, args.json_output)

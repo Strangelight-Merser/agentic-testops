@@ -1,0 +1,160 @@
+{
+  "project_path": "examples/task_tracker",
+  "command": [
+    "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "returncode": 1,
+  "duration_seconds": 0.14633354100078577,
+  "passed": false,
+  "failures": [
+    {
+      "nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
+      "headline": "TypeError: create_task() got an unexpected keyword argument 'priority'",
+      "file_path": "test_task_tracker.py",
+      "line_number": 5,
+      "error_type": "TypeError",
+      "detail": "test_task_tracker.py:5: in test_create_task_accepts_priority_metadata\n    task = create_task(\"Ship README\", priority=2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: create_task() got an unexpected keyword argument 'priority'"
+    },
+    {
+      "nodeid": "test_task_tracker.py::test_completion_rate_uses_done_field",
+      "headline": "KeyError: 'completed'",
+      "file_path": "task_tracker.py",
+      "line_number": 6,
+      "error_type": "KeyError",
+      "detail": "test_task_tracker.py:17: in test_completion_rate_uses_done_field\n    assert completion_rate(tasks) == 0.5\n           ^^^^^^^^^^^^^^^^^^^^^^\ntask_tracker.py:6: in completion_rate\n    done_count = sum(1 for task in tasks if task[\"completed\"])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntask_tracker.py:6: in <genexpr>\n    done_count = sum(1 for task in tasks if task[\"completed\"])\n                                            ^^^^^^^^^^^^^^^^^\nE   KeyError: 'completed'"
+    },
+    {
+      "nodeid": "test_task_tracker.py::test_next_task_handles_empty_backlog",
+      "headline": "IndexError: list index out of range",
+      "file_path": "task_tracker.py",
+      "line_number": 12,
+      "error_type": "IndexError",
+      "detail": "test_task_tracker.py:21: in test_next_task_handles_empty_backlog\n    assert next_task([]) is None\n           ^^^^^^^^^^^^^\ntask_tracker.py:12: in next_task\n    return sorted_tasks[0][\"title\"]\n           ^^^^^^^^^^^^^^^\nE   IndexError: list index out of range"
+    }
+  ],
+  "diagnoses": [
+    {
+      "failure": {
+        "nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
+        "headline": "TypeError: create_task() got an unexpected keyword argument 'priority'",
+        "file_path": "test_task_tracker.py",
+        "line_number": 5,
+        "error_type": "TypeError",
+        "detail": "test_task_tracker.py:5: in test_create_task_accepts_priority_metadata\n    task = create_task(\"Ship README\", priority=2)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE   TypeError: create_task() got an unexpected keyword argument 'priority'"
+      },
+      "category": "api-contract",
+      "confidence": "medium",
+      "summary": "The failing call does not match the function or method contract.",
+      "evidence": [
+        "test_task_tracker.py:5: in test_create_task_accepts_priority_metadata",
+        "E   TypeError: create_task() got an unexpected keyword argument 'priority'"
+      ],
+      "repair_advice": [
+        "Inspect the callee signature and the failing call site together.",
+        "If the public API changed, update compatibility shims or tests intentionally.",
+        "Add a regression test for the argument pattern that triggered the TypeError."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_task_tracker.py::test_completion_rate_uses_done_field",
+        "headline": "KeyError: 'completed'",
+        "file_path": "task_tracker.py",
+        "line_number": 6,
+        "error_type": "KeyError",
+        "detail": "test_task_tracker.py:17: in test_completion_rate_uses_done_field\n    assert completion_rate(tasks) == 0.5\n           ^^^^^^^^^^^^^^^^^^^^^^\ntask_tracker.py:6: in completion_rate\n    done_count = sum(1 for task in tasks if task[\"completed\"])\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\ntask_tracker.py:6: in <genexpr>\n    done_count = sum(1 for task in tasks if task[\"completed\"])\n                                            ^^^^^^^^^^^^^^^^^\nE   KeyError: 'completed'"
+      },
+      "category": "data-shape",
+      "confidence": "medium",
+      "summary": "The code accessed data that was missing or had an unexpected shape.",
+      "evidence": [
+        "test_task_tracker.py:17: in test_completion_rate_uses_done_field",
+        "task_tracker.py:6: in completion_rate",
+        "task_tracker.py:6: in <genexpr>",
+        "E   KeyError: 'completed'"
+      ],
+      "repair_advice": [
+        "Validate the input fixture or runtime data shape before the failing access.",
+        "Use explicit error handling or default behavior only if that matches the product contract.",
+        "Add a test for empty, missing, or malformed data."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_task_tracker.py::test_next_task_handles_empty_backlog",
+        "headline": "IndexError: list index out of range",
+        "file_path": "task_tracker.py",
+        "line_number": 12,
+        "error_type": "IndexError",
+        "detail": "test_task_tracker.py:21: in test_next_task_handles_empty_backlog\n    assert next_task([]) is None\n           ^^^^^^^^^^^^^\ntask_tracker.py:12: in next_task\n    return sorted_tasks[0][\"title\"]\n           ^^^^^^^^^^^^^^^\nE   IndexError: list index out of range"
+      },
+      "category": "data-shape",
+      "confidence": "medium",
+      "summary": "The code accessed data that was missing or had an unexpected shape.",
+      "evidence": [
+        "test_task_tracker.py:21: in test_next_task_handles_empty_backlog",
+        "task_tracker.py:12: in next_task",
+        "E   IndexError: list index out of range"
+      ],
+      "repair_advice": [
+        "Validate the input fixture or runtime data shape before the failing access.",
+        "Use explicit error handling or default behavior only if that matches the product contract.",
+        "Add a test for empty, missing, or malformed data."
+      ]
+    }
+  ],
+  "patch_proposals": [
+    {
+      "failure_nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
+      "target_file": "task_tracker.py",
+      "target_line": 1,
+      "action": "Align the failing call and callee signature, preserving compatibility if the function is public.",
+      "rationale": "The error indicates callers and implementation disagree about accepted arguments or return shape.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_create_task_accepts_priority_metadata"
+      ]
+    },
+    {
+      "failure_nodeid": "test_task_tracker.py::test_completion_rate_uses_done_field",
+      "target_file": "task_tracker.py",
+      "target_line": 6,
+      "action": "Normalize or validate the data shape before reading required keys or indexes.",
+      "rationale": "The failing code attempted to read data that the test demonstrates may be absent or malformed.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_completion_rate_uses_done_field"
+      ]
+    },
+    {
+      "failure_nodeid": "test_task_tracker.py::test_next_task_handles_empty_backlog",
+      "target_file": "task_tracker.py",
+      "target_line": 12,
+      "action": "Normalize or validate the data shape before reading required keys or indexes.",
+      "rationale": "The failing code attempted to read data that the test demonstrates may be absent or malformed.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_next_task_handles_empty_backlog"
+      ]
+    }
+  ],
+  "rerun": {
+    "command": [
+      "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+      "-m",
+      "pytest",
+      "--tb=short",
+      "-q",
+      "test_task_tracker.py::test_create_task_accepts_priority_metadata",
+      "test_task_tracker.py::test_completion_rate_uses_done_field",
+      "test_task_tracker.py::test_next_task_handles_empty_backlog"
+    ],
+    "returncode": 1,
+    "duration_seconds": 0.12428737500158604,
+    "passed": false
+  }
+}

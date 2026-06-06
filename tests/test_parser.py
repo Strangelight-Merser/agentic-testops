@@ -32,3 +32,32 @@ def test_parse_empty_when_passed() -> None:
     )
 
     assert parse_failures(run) == []
+
+
+def test_parse_traceback_keeps_real_error_type_and_project_frame() -> None:
+    run = TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=Path("."),
+        returncode=1,
+        stdout="""F                                                                        [100%]
+=================================== FAILURES ===================================
+___________________________ test_divide_rejects_zero ___________________________
+test_calculator.py:8: in test_divide_rejects_zero
+    divide(10, 0)
+calculator.py:2: in divide
+    return a / b
+           ^^^^^
+E   ZeroDivisionError: division by zero
+=========================== short test summary info ============================
+FAILED test_calculator.py::test_divide_rejects_zero - ZeroDivisionError: divi...
+""",
+        stderr="",
+        duration_seconds=0.1,
+    )
+
+    failures = parse_failures(run)
+
+    assert failures[0].nodeid == "test_calculator.py::test_divide_rejects_zero"
+    assert failures[0].error_type == "ZeroDivisionError"
+    assert failures[0].file_path == "calculator.py"
+    assert failures[0].line_number == 2

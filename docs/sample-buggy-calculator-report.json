@@ -8,22 +8,22 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.12917358300182968,
+  "duration_seconds": 0.14731087499967543,
   "passed": false,
   "failures": [
     {
       "nodeid": "test_calculator.py::test_divide_rejects_zero",
       "headline": "ZeroDivisionError: division by zero",
-      "file_path": null,
-      "line_number": null,
+      "file_path": "calculator.py",
+      "line_number": 2,
       "error_type": "ZeroDivisionError",
       "detail": "test_calculator.py:8: in test_divide_rejects_zero\n    divide(10, 0)\ncalculator.py:2: in divide\n    return a / b\n           ^^^^^\nE   ZeroDivisionError: division by zero"
     },
     {
       "nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
       "headline": "ZeroDivisionError: division by zero",
-      "file_path": null,
-      "line_number": null,
+      "file_path": "calculator.py",
+      "line_number": 6,
       "error_type": "ZeroDivisionError",
       "detail": "test_calculator.py:12: in test_average_empty_list_returns_zero\n    assert average([]) == 0\n           ^^^^^^^^^^^\ncalculator.py:6: in average\n    return sum(values) / len(values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ZeroDivisionError: division by zero"
     }
@@ -33,8 +33,8 @@
       "failure": {
         "nodeid": "test_calculator.py::test_divide_rejects_zero",
         "headline": "ZeroDivisionError: division by zero",
-        "file_path": null,
-        "line_number": null,
+        "file_path": "calculator.py",
+        "line_number": 2,
         "error_type": "ZeroDivisionError",
         "detail": "test_calculator.py:8: in test_divide_rejects_zero\n    divide(10, 0)\ncalculator.py:2: in divide\n    return a / b\n           ^^^^^\nE   ZeroDivisionError: division by zero"
       },
@@ -56,8 +56,8 @@
       "failure": {
         "nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
         "headline": "ZeroDivisionError: division by zero",
-        "file_path": null,
-        "line_number": null,
+        "file_path": "calculator.py",
+        "line_number": 6,
         "error_type": "ZeroDivisionError",
         "detail": "test_calculator.py:12: in test_average_empty_list_returns_zero\n    assert average([]) == 0\n           ^^^^^^^^^^^\ncalculator.py:6: in average\n    return sum(values) / len(values)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\nE   ZeroDivisionError: division by zero"
       },
@@ -75,5 +75,43 @@
         "Document the behavior in a test so future agents preserve it."
       ]
     }
-  ]
+  ],
+  "patch_proposals": [
+    {
+      "failure_nodeid": "test_calculator.py::test_divide_rejects_zero",
+      "target_file": "calculator.py",
+      "target_line": 2,
+      "action": "Add explicit validation for the failing boundary input before the unsafe operation.",
+      "rationale": "The traceback shows an invalid or boundary value reaching implementation code without a contract check.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_calculator.py::test_divide_rejects_zero"
+      ]
+    },
+    {
+      "failure_nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
+      "target_file": "calculator.py",
+      "target_line": 6,
+      "action": "Add explicit validation for the failing boundary input before the unsafe operation.",
+      "rationale": "The traceback shows an invalid or boundary value reaching implementation code without a contract check.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_calculator.py::test_average_empty_list_returns_zero"
+      ]
+    }
+  ],
+  "rerun": {
+    "command": [
+      "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+      "-m",
+      "pytest",
+      "--tb=short",
+      "-q",
+      "test_calculator.py::test_divide_rejects_zero",
+      "test_calculator.py::test_average_empty_list_returns_zero"
+    ],
+    "returncode": 1,
+    "duration_seconds": 0.1258669170056237,
+    "passed": false
+  }
 }

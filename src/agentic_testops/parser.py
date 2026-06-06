@@ -6,6 +6,7 @@ from .models import Failure, TestRun
 
 FAILED_HEADER = re.compile(r"^_{3,}\s+(?P<nodeid>.+?)\s+_{3,}$")
 FILE_LINE = re.compile(r"^(?P<path>[^:\n]+\.py):(?P<line>\d+):\s*(?P<etype>[A-Za-z_][\w.]*)(?::\s*(?P<detail>.*))?$")
+TRACE_FRAME = re.compile(r"^(?P<path>[^:\n]+\.py):(?P<line>\d+):\s+in\s+\w+")
 SHORT_SUMMARY = re.compile(r"^FAILED\s+(?P<nodeid>\S+)\s+-\s+(?P<headline>.+)$")
 
 
@@ -97,9 +98,14 @@ def _failure_from_block(nodeid: str, block: list[str]) -> Failure:
     headline = headline.removeprefix("E   ").strip()
     file_path = None
     line_number = None
-    error_type = None
+    error_type = _error_type_from_headline(headline)
 
     for line in reversed(block):
+        frame = TRACE_FRAME.match(line.strip())
+        if frame:
+            file_path = frame.group("path")
+            line_number = int(frame.group("line"))
+            break
         match = FILE_LINE.match(line.strip())
         if match:
             file_path = match.group("path")
@@ -108,9 +114,6 @@ def _failure_from_block(nodeid: str, block: list[str]) -> Failure:
             if match.group("detail"):
                 headline = f"{error_type}: {match.group('detail')}"
             break
-
-    if error_type is None and headline:
-        error_type = headline.split(":", 1)[0] if ":" in headline else headline.split()[0]
 
     detail = "\n".join(block[-20:]).strip()
     return Failure(
@@ -121,3 +124,12 @@ def _failure_from_block(nodeid: str, block: list[str]) -> Failure:
         error_type=error_type,
         detail=detail,
     )
+
+
+def _error_type_from_headline(headline: str) -> str | None:
+    if not headline:
+        return None
+    first = headline.split(":", 1)[0] if ":" in headline else headline.split()[0]
+    if first.endswith("Error") or first.endswith("Exception"):
+        return first
+    return first if first in {"AssertionError"} else None

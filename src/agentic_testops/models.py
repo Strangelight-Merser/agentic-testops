@@ -42,11 +42,24 @@ class Diagnosis:
 
 
 @dataclass(frozen=True)
+class PatchProposal:
+    failure_nodeid: str
+    target_file: str | None
+    target_line: int | None
+    action: str
+    rationale: str
+    confidence: str
+    guardrail_tests: list[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class AuditReport:
     project_path: Path
     run: TestRun
     failures: list[Failure]
     diagnoses: list[Diagnosis]
+    patch_proposals: list[PatchProposal] = field(default_factory=list)
+    rerun: TestRun | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -67,4 +80,13 @@ class AuditReport:
                 }
                 for diagnosis in self.diagnoses
             ],
+            "patch_proposals": [proposal.__dict__ for proposal in self.patch_proposals],
+            "rerun": {
+                "command": self.rerun.command,
+                "returncode": self.rerun.returncode,
+                "duration_seconds": self.rerun.duration_seconds,
+                "passed": self.rerun.passed,
+            }
+            if self.rerun
+            else None,
         }

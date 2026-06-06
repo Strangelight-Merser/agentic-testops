@@ -34,6 +34,19 @@ def render_markdown(report: AuditReport) -> str:
         lines.extend(["## Result", "", "All tests passed. No repair advice was generated.", ""])
         return "\n".join(lines)
 
+    if report.rerun:
+        status = "PASS" if report.rerun.passed else "FAIL"
+        lines.extend(
+            [
+                "## Agentic Rerun",
+                "",
+                f"- Status: **{status}**",
+                f"- Command: `{' '.join(report.rerun.command)}`",
+                f"- Duration: `{report.rerun.duration_seconds:.2f}s`",
+                "",
+            ]
+        )
+
     lines.extend(["## Diagnosis", ""])
     for index, diagnosis in enumerate(report.diagnoses, start=1):
         failure = diagnosis.failure
@@ -60,6 +73,27 @@ def render_markdown(report: AuditReport) -> str:
         for item in diagnosis.repair_advice:
             lines.append(f"- {item}")
         lines.append("")
+
+    if report.patch_proposals:
+        lines.extend(["## Patch Proposals", ""])
+        for index, proposal in enumerate(report.patch_proposals, start=1):
+            location = proposal.target_file or "unknown"
+            if proposal.target_line:
+                location = f"{location}:{proposal.target_line}"
+            lines.extend(
+                [
+                    f"### {index}. `{proposal.failure_nodeid}`",
+                    "",
+                    f"- Target: `{location}`",
+                    f"- Confidence: `{proposal.confidence}`",
+                    f"- Action: {proposal.action}",
+                    f"- Rationale: {proposal.rationale}",
+                    "- Guardrail tests:",
+                ]
+            )
+            for nodeid in proposal.guardrail_tests:
+                lines.append(f"  - `{nodeid}`")
+            lines.append("")
 
     lines.extend(
         [

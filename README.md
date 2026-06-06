@@ -1,6 +1,8 @@
 # Agentic TestOps
 
-Agentic TestOps is a small, runnable Agentic AI Infra project for Python repositories. It turns a failing test run into a structured engineering report: execute `pytest`, parse failures, classify likely root causes, and produce repair-oriented Markdown/JSON output that can be reviewed by a human or passed to a future code-fixing agent.
+[![CI](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml/badge.svg)](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml)
+
+Agentic TestOps is a runnable Agentic AI Infra project for Python repositories. It turns a failing test run into a structured engineering report: execute `pytest`, parse failures, classify likely root causes, rerun failing tests, and produce repair-oriented Markdown/JSON output that can be reviewed by a human or passed to a future code-fixing agent.
 
 This repository is aimed at **Agentic4Systems Track 03: Agentic AI Infra**. The project focuses on the "implementation -> verification -> diagnosis -> improvement" loop for software systems, using real tools instead of a slide-only demo.
 
@@ -14,13 +16,14 @@ Modern AI coding workflows often stop at code generation. Real systems need a fe
 4. Generate a report with evidence and concrete repair advice.
 5. Feed the result into the next debugging or patching step.
 
-Agentic TestOps implements the first working slice of that loop.
+Agentic TestOps implements the first working slice of that loop, with deterministic behavior that can run in CI without an API key.
 
 ## Current Features
 
 - `agentic-testops audit <project>` CLI.
 - Runs `python -m pytest --tb=short -q` in the target project.
 - Parses pytest failure summaries and traceback sections.
+- Optionally reruns only parsed failing node IDs with `--rerun-failures`.
 - Diagnoses common Python failure classes:
   - assertion or behavioral regression
   - dependency/import failure
@@ -29,9 +32,17 @@ Agentic TestOps implements the first working slice of that loop.
   - input validation boundary bug
   - collection/environment failure
 - Writes a professional Markdown report.
-- Optionally writes machine-readable JSON for later agent orchestration.
-- Includes a deliberately failing example project.
-- Includes unit tests for parser, diagnoser, and reporter components.
+- Writes machine-readable JSON for later agent orchestration.
+- Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
+- Includes two deliberately failing example projects.
+- Includes unit tests and GitHub Actions CI.
+
+## Demo Artifacts
+
+- [Application brief](docs/application-brief.md)
+- [Buggy calculator report](docs/sample-buggy-calculator-report.md)
+- [Task tracker report](docs/sample-task-tracker-report.md)
+- [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
 
 ## Quick Start
 
@@ -39,6 +50,7 @@ Agentic TestOps implements the first working slice of that loop.
 python -m pip install -e ".[dev]"
 python -m pytest
 agentic-testops audit examples/buggy_calculator \
+  --rerun-failures \
   -o reports/buggy-calculator-report.md \
   --json-output reports/buggy-calculator-report.json
 ```
@@ -51,6 +63,15 @@ agentic-testops audit . --pytest-arg tests/test_parser.py --pytest-arg -q
 
 The example project should fail because `divide(10, 0)` raises `ZeroDivisionError` while the test expects `ValueError`, and `average([])` also divides by zero. That is intentional: it demonstrates how the tool converts raw pytest output into repair advice.
 
+For a larger demo with multiple failure categories:
+
+```bash
+agentic-testops audit examples/task_tracker \
+  --rerun-failures \
+  -o reports/task-tracker-report.md \
+  --json-output reports/task-tracker-report.json
+```
+
 ## Example Output
 
 ```markdown
@@ -58,6 +79,11 @@ The example project should fail because `divide(10, 0)` raises `ZeroDivisionErro
 
 - Status: **FAIL**
 - Parsed failures: `2`
+
+## Agentic Rerun
+
+- Status: **FAIL**
+- Command: `python -m pytest --tb=short -q test_calculator.py::test_divide_rejects_zero ...`
 
 ## Diagnosis
 
@@ -70,6 +96,13 @@ Repair advice:
 - Define the intended behavior for the boundary input: reject, clamp, or return a neutral value.
 - Guard the operation close to the source of the invalid value.
 - Document the behavior in a test so future agents preserve it.
+
+## Patch Proposals
+
+### 1. `test_calculator.py::test_divide_rejects_zero`
+
+- Target: `calculator.py:2`
+- Action: Add explicit validation for the failing boundary input before the unsafe operation.
 ```
 
 ## Architecture
@@ -85,6 +118,12 @@ Failure parser
         |
         v
 Rule-based diagnosis agent
+        |
+        v
+Focused failing-test rerun
+        |
+        v
+Patch proposal planner
         |
         v
 Markdown / JSON report writer
@@ -103,11 +142,19 @@ src/agentic_testops/
   runner.py       pytest execution wrapper
   parser.py       pytest output parser
   diagnoser.py    failure classification and repair advice
+  patcher.py      structured patch proposal planner
   reporter.py     Markdown and JSON report generation
   models.py       shared dataclasses
 examples/
   buggy_calculator/
+  task_tracker/
+docs/
+  application-brief.md
+  sample-buggy-calculator-report.md
+  sample-task-tracker-report.md
 tests/
+.github/workflows/
+  ci.yml
 ```
 
 ## Two-Week Build Plan Before June 30
@@ -117,18 +164,21 @@ tests/
 - Build the CLI, pytest runner, parser, diagnosis rules, reports, and example project.
 - Keep the system dependency-light so reviewers can run it quickly.
 - Add unit tests for each internal stage.
+- Status: implemented.
 
 ### Phase 2: Agentic Loop
 
 - Add a `rerun` mode that reruns only failed node IDs.
 - Add patch proposal objects in JSON: target file, suspected line, proposed edit summary, and confidence.
 - Add a project memory file that records repeated failures and whether prior advice worked.
+- Status: rerun and patch proposals implemented; persistent project memory remains planned.
 
 ### Phase 3: Demonstration Quality
 
 - Add one larger sample project with three bug types.
 - Generate before/after reports and screenshots or terminal transcripts.
 - Improve README with badges, design goals, limitations, and evaluation metrics.
+- Status: larger sample project, generated reports, and CI are implemented.
 
 ### Phase 4: Application Polish
 
