@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
 authors = [{ name = "Agentic TestOps Contributors" }]
-keywords = ["agentic", "testops", "pytest", "debugging", "ai-infra"]
+keywords = ["agentic", "testops", "pytest", "debugging", "automation"]
 dependencies = []
 
 [project.optional-dependencies]

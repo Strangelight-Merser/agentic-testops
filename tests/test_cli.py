@@ -1,0 +1,59 @@
+from pathlib import Path
+
+from agentic_testops import cli
+from agentic_testops.models import TestRun
+
+
+def test_rerun_preserves_user_pytest_args(monkeypatch, tmp_path) -> None:
+    calls = []
+
+    def fake_run_pytest(project_path: Path, extra_args=None, timeout=120):
+        calls.append(list(extra_args or []))
+        return TestRun(
+            command=["python", "-m", "pytest", *(extra_args or [])],
+            cwd=project_path,
+            returncode=1,
+            stdout="FAILED tests/test_app.py::test_case - AssertionError: assert False\n",
+            stderr="",
+            duration_seconds=0.1,
+        )
+
+    monkeypatch.setattr(cli, "run_pytest", fake_run_pytest)
+
+    exit_code = cli.main(
+        [
+            "audit",
+            str(tmp_path),
+            "--rerun-failures",
+            "--pytest-arg=-k",
+            "--pytest-arg=slow",
+            "-o",
+            str(tmp_path / "report.md"),
+        ]
+    )
+
+    assert exit_code == 1
+    assert calls[0] == ["-k", "slow"]
+    assert calls[1] == ["-k", "slow", "tests/test_app.py::test_case"]
+
+
+def test_pytest_arg_accepts_values_that_start_with_dash(monkeypatch, tmp_path) -> None:
+    calls = []
+
+    def fake_run_pytest(project_path: Path, extra_args=None, timeout=120):
+        calls.append(list(extra_args or []))
+        return TestRun(
+            command=["python", "-m", "pytest", *(extra_args or [])],
+            cwd=project_path,
+            returncode=0,
+            stdout="1 passed\n",
+            stderr="",
+            duration_seconds=0.1,
+        )
+
+    monkeypatch.setattr(cli, "run_pytest", fake_run_pytest)
+
+    exit_code = cli.main(["audit", str(tmp_path), "--pytest-arg", "tests/test_parser.py", "--pytest-arg=-q"])
+
+    assert exit_code == 0
+    assert calls[0] == ["tests/test_parser.py", "-q"]

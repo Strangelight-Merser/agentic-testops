@@ -1,15 +1,16 @@
 {
   "project_path": "examples/task_tracker",
   "command": [
-    "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+    "python",
     "-m",
     "pytest",
     "--tb=short",
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.14633354100078577,
+  "duration_seconds": 0.11668029199063312,
   "passed": false,
+  "timed_out": false,
   "failures": [
     {
       "nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
@@ -144,7 +145,7 @@
   ],
   "rerun": {
     "command": [
-      "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+      "python",
       "-m",
       "pytest",
       "--tb=short",
@@ -154,7 +155,8 @@
       "test_task_tracker.py::test_next_task_handles_empty_backlog"
     ],
     "returncode": 1,
-    "duration_seconds": 0.12428737500158604,
-    "passed": false
+    "duration_seconds": 0.11274675000458956,
+    "passed": false,
+    "timed_out": false
   }
 }

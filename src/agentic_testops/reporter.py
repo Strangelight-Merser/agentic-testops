@@ -17,13 +17,13 @@ def write_json_report(report: AuditReport, output_path: Path) -> None:
 
 
 def render_markdown(report: AuditReport) -> str:
-    status = "PASS" if report.run.passed else "FAIL"
+    status = _status(report.run)
     lines = [
         "# Agentic TestOps Audit Report",
         "",
         f"- Project: `{report.project_path}`",
         f"- Status: **{status}**",
-        f"- Command: `{' '.join(report.run.command)}`",
+        f"- Command: `{_render_command(report.run.command)}`",
         f"- Duration: `{report.run.duration_seconds:.2f}s`",
         f"- Return code: `{report.run.returncode}`",
         f"- Parsed failures: `{len(report.failures)}`",
@@ -35,13 +35,13 @@ def render_markdown(report: AuditReport) -> str:
         return "\n".join(lines)
 
     if report.rerun:
-        status = "PASS" if report.rerun.passed else "FAIL"
+        status = _status(report.rerun)
         lines.extend(
             [
                 "## Agentic Rerun",
                 "",
                 f"- Status: **{status}**",
-                f"- Command: `{' '.join(report.rerun.command)}`",
+                f"- Command: `{_render_command(report.rerun.command)}`",
                 f"- Duration: `{report.rerun.duration_seconds:.2f}s`",
                 "",
             ]
@@ -113,3 +113,15 @@ def _trim(text: str, limit: int = 12000) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "\n... output truncated ..."
+
+
+def _status(run) -> str:
+    if run.timed_out:
+        return "TIMEOUT"
+    return "PASS" if run.passed else "FAIL"
+
+
+def _render_command(command: list[str]) -> str:
+    if len(command) >= 3 and command[1:3] == ["-m", "pytest"]:
+        return " ".join(["python", *command[1:]])
+    return " ".join(command)

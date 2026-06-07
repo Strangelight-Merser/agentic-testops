@@ -20,14 +20,31 @@ def run_pytest(project_path: Path, extra_args: list[str] | None = None, timeout:
         command.extend(extra_args)
 
     start = time.perf_counter()
-    completed = subprocess.run(
-        command,
-        cwd=project_path,
-        capture_output=True,
-        text=True,
-        timeout=timeout,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=project_path,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            check=False,
+        )
+    except subprocess.TimeoutExpired as exc:
+        duration = time.perf_counter() - start
+        stdout = _coerce_output(exc.stdout)
+        stderr = _coerce_output(exc.stderr)
+        timeout_message = f"Pytest timed out after {timeout} seconds."
+        stderr = "\n".join(part for part in [stderr, timeout_message] if part)
+        return TestRun(
+            command=command,
+            cwd=project_path,
+            returncode=124,
+            stdout=stdout,
+            stderr=stderr,
+            duration_seconds=duration,
+            timed_out=True,
+        )
+
     duration = time.perf_counter() - start
     return TestRun(
         command=command,
@@ -37,3 +54,11 @@ def run_pytest(project_path: Path, extra_args: list[str] | None = None, timeout:
         stderr=completed.stderr,
         duration_seconds=duration,
     )
+
+
+def _coerce_output(output: str | bytes | None) -> str:
+    if output is None:
+        return ""
+    if isinstance(output, bytes):
+        return output.decode(errors="replace")
+    return output

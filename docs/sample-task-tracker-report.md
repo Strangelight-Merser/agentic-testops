@@ -2,16 +2,16 @@
 
 - Project: `examples/task_tracker`
 - Status: **FAIL**
-- Command: `/opt/homebrew/Caskroom/miniconda/base/bin/python -m pytest --tb=short -q`
-- Duration: `0.15s`
+- Command: `python -m pytest --tb=short -q`
+- Duration: `0.12s`
 - Return code: `1`
 - Parsed failures: `3`
 
 ## Agentic Rerun
 
 - Status: **FAIL**
-- Command: `/opt/homebrew/Caskroom/miniconda/base/bin/python -m pytest --tb=short -q test_task_tracker.py::test_create_task_accepts_priority_metadata test_task_tracker.py::test_completion_rate_uses_done_field test_task_tracker.py::test_next_task_handles_empty_backlog`
-- Duration: `0.12s`
+- Command: `python -m pytest --tb=short -q test_task_tracker.py::test_create_task_accepts_priority_metadata test_task_tracker.py::test_completion_rate_uses_done_field test_task_tracker.py::test_next_task_handles_empty_backlog`
+- Duration: `0.11s`
 
 ## Diagnosis
 

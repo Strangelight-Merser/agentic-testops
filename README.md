@@ -24,6 +24,8 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Runs `python -m pytest --tb=short -q` in the target project.
 - Parses pytest failure summaries and traceback sections.
 - Optionally reruns only parsed failing node IDs with `--rerun-failures`.
+- Converts pytest timeouts into structured reports instead of crashing.
+- Preserves user-supplied pytest arguments during focused reruns.
 - Diagnoses common Python failure classes:
   - assertion or behavioral regression
   - dependency/import failure
@@ -58,7 +60,7 @@ agentic-testops audit examples/buggy_calculator \
 To pass extra pytest arguments, repeat `--pytest-arg`:
 
 ```bash
-agentic-testops audit . --pytest-arg tests/test_parser.py --pytest-arg -q
+agentic-testops audit . --pytest-arg tests/test_parser.py --pytest-arg=-q
 ```
 
 The example project should fail because `divide(10, 0)` raises `ZeroDivisionError` while the test expects `ValueError`, and `average([])` also divides by zero. That is intentional: it demonstrates how the tool converts raw pytest output into repair advice.
@@ -205,6 +207,7 @@ tests/
 - The first version suggests repairs but does not edit target code.
 - Pytest output parsing is intentionally conservative and may miss exotic plugin formats.
 - Diagnosis rules are heuristic; the report is designed to support human review, not replace it.
+- Patch proposals are planning hints, not executable code changes.
 
 ## License
 

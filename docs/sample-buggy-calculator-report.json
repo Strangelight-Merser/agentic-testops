@@ -1,15 +1,16 @@
 {
   "project_path": "examples/buggy_calculator",
   "command": [
-    "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+    "python",
     "-m",
     "pytest",
     "--tb=short",
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.14731087499967543,
+  "duration_seconds": 0.12146133399801329,
   "passed": false,
+  "timed_out": false,
   "failures": [
     {
       "nodeid": "test_calculator.py::test_divide_rejects_zero",
@@ -102,7 +103,7 @@
   ],
   "rerun": {
     "command": [
-      "/opt/homebrew/Caskroom/miniconda/base/bin/python",
+      "python",
       "-m",
       "pytest",
       "--tb=short",
@@ -111,7 +112,8 @@
       "test_calculator.py::test_average_empty_list_returns_zero"
     ],
     "returncode": 1,
-    "duration_seconds": 0.1258669170056237,
-    "passed": false
+    "duration_seconds": 0.1178432500018971,
+    "passed": false,
+    "timed_out": false
   }
 }

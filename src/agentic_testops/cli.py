@@ -32,7 +32,10 @@ def build_parser() -> argparse.ArgumentParser:
         "--pytest-arg",
         action="append",
         default=[],
-        help="Extra argument passed to pytest. Repeat for multiple args, e.g. --pytest-arg tests/test_api.py.",
+        help=(
+            "Extra argument passed to pytest. Repeat for multiple args. "
+            "Use --pytest-arg=-q for values that start with a dash."
+        ),
     )
     return parser
 
@@ -47,7 +50,7 @@ def main(argv: list[str] | None = None) -> int:
         patch_proposals = propose_patches(diagnoses, project_path=args.project)
         rerun = None
         if args.rerun_failures and failures:
-            rerun_args = [failure.nodeid for failure in failures]
+            rerun_args = [*extra_args, *[failure.nodeid for failure in failures]]
             rerun = run_pytest(args.project, extra_args=rerun_args, timeout=args.timeout)
         report = AuditReport(
             project_path=args.project,

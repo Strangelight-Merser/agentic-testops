@@ -4,9 +4,32 @@ from .models import Diagnosis, Failure, TestRun
 
 
 def diagnose_failures(failures: list[Failure], run: TestRun) -> list[Diagnosis]:
+    if run.timed_out:
+        return [_diagnose_timeout(run)]
     if not failures and not run.passed:
         return [_diagnose_collection_or_environment(run)]
     return [_diagnose_failure(failure) for failure in failures]
+
+
+def _diagnose_timeout(run: TestRun) -> Diagnosis:
+    text = f"{run.stdout}\n{run.stderr}"
+    failure = Failure(
+        nodeid="pytest session",
+        headline="Pytest timed out before the test session completed.",
+        detail=text[-2000:],
+    )
+    return Diagnosis(
+        failure=failure,
+        category="timeout",
+        confidence="high",
+        summary="The test command exceeded the configured timeout, so the project may contain a hanging test or slow fixture.",
+        evidence=_interesting_lines(text),
+        repair_advice=[
+            "Rerun with a higher timeout only after checking whether the suite is expected to take that long.",
+            "Use pytest selection such as `-k` or a single test path to isolate the hanging test.",
+            "Inspect long-running fixtures, network calls, sleeps, and subprocess waits first.",
+        ],
+    )
 
 
 def _diagnose_collection_or_environment(run: TestRun) -> Diagnosis:

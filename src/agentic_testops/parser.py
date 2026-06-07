@@ -75,7 +75,7 @@ def _merge_summary_nodeids(section_failures: list[Failure], summary_failures: li
     merged: list[Failure] = []
     remaining = summary_failures.copy()
     for failure in section_failures:
-        match = next((item for item in remaining if item.nodeid.endswith(f"::{failure.nodeid}")), None)
+        match = next((item for item in remaining if _nodeid_matches_section(failure.nodeid, item.nodeid)), None)
         if not match:
             merged.append(failure)
             continue
@@ -91,6 +91,15 @@ def _merge_summary_nodeids(section_failures: list[Failure], summary_failures: li
             )
         )
     return merged
+
+
+def _nodeid_matches_section(section_nodeid: str, summary_nodeid: str) -> bool:
+    if summary_nodeid.endswith(f"::{section_nodeid}"):
+        return True
+    if "::" not in summary_nodeid:
+        return summary_nodeid == section_nodeid
+    summary_tail = summary_nodeid.split("::", 1)[1].replace("::", ".")
+    return summary_tail == section_nodeid or summary_tail.endswith(f".{section_nodeid}")
 
 
 def _failure_from_block(nodeid: str, block: list[str]) -> Failure:

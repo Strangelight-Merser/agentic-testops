@@ -2,16 +2,16 @@
 
 - Project: `examples/buggy_calculator`
 - Status: **FAIL**
-- Command: `/opt/homebrew/Caskroom/miniconda/base/bin/python -m pytest --tb=short -q`
-- Duration: `0.15s`
+- Command: `python -m pytest --tb=short -q`
+- Duration: `0.12s`
 - Return code: `1`
 - Parsed failures: `2`
 
 ## Agentic Rerun
 
 - Status: **FAIL**
-- Command: `/opt/homebrew/Caskroom/miniconda/base/bin/python -m pytest --tb=short -q test_calculator.py::test_divide_rejects_zero test_calculator.py::test_average_empty_list_returns_zero`
-- Duration: `0.13s`
+- Command: `python -m pytest --tb=short -q test_calculator.py::test_divide_rejects_zero test_calculator.py::test_average_empty_list_returns_zero`
+- Duration: `0.12s`
 
 ## Diagnosis
 
@@ -92,5 +92,5 @@ E   ZeroDivisionError: division by zero
 =========================== short test summary info ============================
 FAILED test_calculator.py::test_divide_rejects_zero - ZeroDivisionError: divi...
 FAILED test_calculator.py::test_average_empty_list_returns_zero - ZeroDivisio...
-2 failed in 0.02s
+2 failed in 0.01s
 ```

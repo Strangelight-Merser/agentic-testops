@@ -26,6 +26,7 @@ The CLI produces Markdown and JSON reports. JSON output is designed to be machin
 ## Evaluation Signals
 
 - Unit tests validate parser, diagnosis, patch proposal, and report behavior.
+- Timeout and focused-rerun behavior are covered by tests.
 - GitHub Actions runs the tool on every push.
 - Sample reports are generated from real pytest output rather than handwritten fixtures.
 - The design avoids requiring an API key for the base demo, which improves reproducibility.

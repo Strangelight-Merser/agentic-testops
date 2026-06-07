@@ -49,3 +49,31 @@ def test_render_markdown_contains_rerun_and_patch_proposal() -> None:
     assert "## Agentic Rerun" in markdown
     assert "## Patch Proposals" in markdown
     assert "app.py:10" in markdown
+
+
+def test_render_markdown_sanitizes_python_executable_and_marks_timeout() -> None:
+    run = TestRun(
+        ["/tmp/custom/python", "-m", "pytest", "--tb=short", "-q"],
+        Path("."),
+        124,
+        "",
+        "Pytest timed out after 1 seconds.",
+        1.0,
+        timed_out=True,
+    )
+    report = AuditReport(Path("."), run, [], diagnose_failures([], run))
+
+    markdown = render_markdown(report)
+
+    assert "Status: **TIMEOUT**" in markdown
+    assert "`python -m pytest --tb=short -q`" in markdown
+    assert "/tmp/custom/python" not in markdown
+
+
+def test_json_report_uses_portable_python_command() -> None:
+    run = TestRun(["/tmp/custom/python", "-m", "pytest", "-q"], Path("."), 0, "1 passed", "", 0.1)
+    report = AuditReport(Path("."), run, [], [])
+
+    data = report.to_dict()
+
+    assert data["command"] == ["python", "-m", "pytest", "-q"]

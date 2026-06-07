@@ -15,6 +15,7 @@ class TestRun:
     stdout: str
     stderr: str
     duration_seconds: float
+    timed_out: bool = False
 
     @property
     def passed(self) -> bool:
@@ -64,10 +65,11 @@ class AuditReport:
     def to_dict(self) -> dict[str, Any]:
         return {
             "project_path": str(self.project_path),
-            "command": self.run.command,
+            "command": _portable_command(self.run.command),
             "returncode": self.run.returncode,
             "duration_seconds": self.run.duration_seconds,
             "passed": self.run.passed,
+            "timed_out": self.run.timed_out,
             "failures": [failure.__dict__ for failure in self.failures],
             "diagnoses": [
                 {
@@ -82,11 +84,18 @@ class AuditReport:
             ],
             "patch_proposals": [proposal.__dict__ for proposal in self.patch_proposals],
             "rerun": {
-                "command": self.rerun.command,
+                "command": _portable_command(self.rerun.command),
                 "returncode": self.rerun.returncode,
                 "duration_seconds": self.rerun.duration_seconds,
                 "passed": self.rerun.passed,
+                "timed_out": self.rerun.timed_out,
             }
             if self.rerun
             else None,
         }
+
+
+def _portable_command(command: list[str]) -> list[str]:
+    if len(command) >= 3 and command[1:3] == ["-m", "pytest"]:
+        return ["python", *command[1:]]
+    return command

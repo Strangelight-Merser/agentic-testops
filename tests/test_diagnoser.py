@@ -17,3 +17,20 @@ def test_diagnose_assertion_failure() -> None:
 
     assert diagnoses[0].category == "behavioral-regression"
     assert diagnoses[0].repair_advice
+
+
+def test_diagnose_timeout() -> None:
+    run = TestRun(
+        ["python", "-m", "pytest"],
+        Path("."),
+        124,
+        "",
+        "Pytest timed out after 1 seconds.",
+        1.0,
+        timed_out=True,
+    )
+
+    diagnoses = diagnose_failures([], run)
+
+    assert diagnoses[0].category == "timeout"
+    assert diagnoses[0].confidence == "high"

@@ -8,6 +8,21 @@ from .models import Diagnosis, PatchProposal
 
 
 UNEXPECTED_KEYWORD = re.compile(r"(?P<name>\w+)\(\) got an unexpected keyword argument")
+IGNORED_DIRS = {
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".tox",
+    ".venv",
+    "__pycache__",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+}
 
 
 def propose_patches(diagnoses: list[Diagnosis], project_path: Path | None = None) -> list[PatchProposal]:
@@ -81,6 +96,7 @@ def _proposal_for(diagnosis: Diagnosis, project_path: Path | None) -> PatchPropo
 def _locate_api_contract_target(diagnosis: Diagnosis, project_path: Path | None) -> tuple[str, int] | None:
     if project_path is None:
         return None
+    project_path = project_path.resolve()
 
     match = UNEXPECTED_KEYWORD.search(diagnosis.failure.headline)
     if not match:
@@ -88,13 +104,20 @@ def _locate_api_contract_target(diagnosis: Diagnosis, project_path: Path | None)
 
     function_name = match.group("name")
     for path in sorted(project_path.rglob("*.py")):
-        if path.name.startswith("test_") or "/tests/" in path.as_posix():
+        if _should_skip_path(path, project_path):
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"))
-        except SyntaxError:
+        except (SyntaxError, UnicodeDecodeError):
             continue
         for node in ast.walk(tree):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function_name:
                 return path.relative_to(project_path).as_posix(), node.lineno
     return None
+
+
+def _should_skip_path(path: Path, project_path: Path) -> bool:
+    relative_parts = path.relative_to(project_path).parts
+    if any(part in IGNORED_DIRS for part in relative_parts):
+        return True
+    return path.name.startswith("test_") or "tests" in relative_parts
