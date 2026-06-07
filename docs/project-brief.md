@@ -1,8 +1,8 @@
-# Agentic4Systems Track 03 Application Brief
+# Agentic TestOps Project Brief
 
 ## Project
 
-**Agentic TestOps** is an Agentic AI Infra prototype for Python projects. It automates a concrete software-system feedback loop:
+**Agentic TestOps** is a TestOps assistant prototype for Python projects. It automates a concrete feedback loop:
 
 1. Execute the target project's tests.
 2. Parse noisy failure output into structured failure objects.
@@ -10,9 +10,9 @@
 4. Rerun only failing node IDs to confirm reproducibility.
 5. Generate patch proposal objects and human-readable reports.
 
-## Track 03 Fit
+## Technical Focus
 
-The project is aligned with Agentic AI Infra because it treats testing as an agent runtime primitive rather than a passive CI afterthought. The system has explicit tool use, task decomposition, verification steps, structured intermediate state, and report artifacts that can be consumed by future patching or orchestration agents.
+The project treats testing as an active automation primitive rather than a passive CI afterthought. The system has explicit tool use, task decomposition, verification steps, structured intermediate state, and report artifacts that can be consumed by future patching or orchestration agents.
 
 ## Current Demo
 

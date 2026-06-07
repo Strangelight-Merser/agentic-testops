@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml/badge.svg)](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml)
 
-Agentic TestOps is a runnable Agentic AI Infra project for Python repositories. It turns a failing test run into a structured engineering report: execute `pytest`, parse failures, classify likely root causes, rerun failing tests, and produce repair-oriented Markdown/JSON output that can be reviewed by a human or passed to a future code-fixing agent.
+Agentic TestOps is a runnable TestOps assistant for Python repositories. It turns a failing test run into a structured engineering report: execute `pytest`, parse failures, classify likely root causes, rerun failing tests, and produce repair-oriented Markdown/JSON output that can be reviewed by a human or passed to a future code-fixing agent.
 
-This repository is aimed at **Agentic4Systems Track 03: Agentic AI Infra**. The project focuses on the "implementation -> verification -> diagnosis -> improvement" loop for software systems, using real tools instead of a slide-only demo.
+The project focuses on the "implementation -> verification -> diagnosis -> improvement" loop for Python codebases, using real tools instead of a slide-only demo.
 
 ## Why This Project
 
@@ -39,7 +39,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 
 ## Demo Artifacts
 
-- [Application brief](docs/application-brief.md)
+- [Project brief](docs/project-brief.md)
 - [Buggy calculator report](docs/sample-buggy-calculator-report.md)
 - [Task tracker report](docs/sample-task-tracker-report.md)
 - [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
@@ -149,7 +149,7 @@ examples/
   buggy_calculator/
   task_tracker/
 docs/
-  application-brief.md
+  project-brief.md
   sample-buggy-calculator-report.md
   sample-task-tracker-report.md
 tests/
@@ -180,16 +180,16 @@ tests/
 - Improve README with badges, design goals, limitations, and evaluation metrics.
 - Status: larger sample project, generated reports, and CI are implemented.
 
-### Phase 4: Application Polish
+### Phase 4: Project Polish
 
 - Publish to GitHub with a clean commit history.
 - Add a short demo GIF or terminal recording.
-- Write a concise application paragraph explaining the Track 03 fit:
+- Write a concise project positioning paragraph:
   - real tool invocation
-  - experiment/test execution
+  - test execution
   - error diagnosis
   - continuous improvement loop
-  - extensible agent runtime boundary
+  - extensible automation boundary
 
 ## Roadmap
 
