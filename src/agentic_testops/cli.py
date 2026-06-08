@@ -4,6 +4,7 @@ import argparse
 from pathlib import Path
 
 from .diagnoser import diagnose_failures
+from .fixer import render_fix_suggestions_patch, suggest_fixes
 from .models import AuditReport
 from .parser import parse_failures
 from .patcher import propose_patches
@@ -22,6 +23,7 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("project", type=Path, help="Path to the target Python project.")
     audit.add_argument("-o", "--output", type=Path, default=Path("reports/agentic-testops-report.md"))
     audit.add_argument("--json-output", type=Path, help="Optional JSON report path.")
+    audit.add_argument("--fix-output", type=Path, help="Optional dry-run fix suggestion patch path.")
     audit.add_argument("--timeout", type=int, default=120, help="Pytest timeout in seconds.")
     audit.add_argument(
         "--rerun-failures",
@@ -37,6 +39,11 @@ def build_parser() -> argparse.ArgumentParser:
             "Use --pytest-arg=-q for values that start with a dash."
         ),
     )
+    audit.add_argument(
+        "--suggest-fixes",
+        action="store_true",
+        help="Generate conservative dry-run unified diff suggestions without modifying the target project.",
+    )
     return parser
 
 
@@ -48,6 +55,8 @@ def main(argv: list[str] | None = None) -> int:
         failures = parse_failures(run)
         diagnoses = diagnose_failures(failures, run)
         patch_proposals = propose_patches(diagnoses, project_path=args.project)
+        should_suggest_fixes = args.suggest_fixes or args.fix_output is not None
+        fix_suggestions = suggest_fixes(args.project, diagnoses, patch_proposals) if should_suggest_fixes else []
         rerun = None
         if args.rerun_failures and failures:
             rerun_args = [*extra_args, *[failure.nodeid for failure in failures]]
@@ -58,14 +67,20 @@ def main(argv: list[str] | None = None) -> int:
             failures=failures,
             diagnoses=diagnoses,
             patch_proposals=patch_proposals,
+            fix_suggestions=fix_suggestions,
             rerun=rerun,
         )
         write_markdown_report(report, args.output)
         if args.json_output:
             write_json_report(report, args.json_output)
+        if args.fix_output:
+            args.fix_output.parent.mkdir(parents=True, exist_ok=True)
+            args.fix_output.write_text(render_fix_suggestions_patch(fix_suggestions), encoding="utf-8")
 
         print(f"Agentic TestOps report written to {args.output}")
         if args.json_output:
             print(f"JSON report written to {args.json_output}")
+        if args.fix_output:
+            print(f"Dry-run fix suggestions written to {args.fix_output}")
         return 0 if run.passed else 1
     return 2

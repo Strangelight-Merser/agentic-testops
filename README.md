@@ -36,6 +36,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Writes a professional Markdown report.
 - Writes machine-readable JSON for later agent orchestration.
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
+- Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`.
 - Includes two deliberately failing example projects.
 - Includes unit tests and GitHub Actions CI.
 
@@ -43,7 +44,9 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 
 - [Project brief](docs/project-brief.md)
 - [Buggy calculator report](docs/sample-buggy-calculator-report.md)
+- [Buggy calculator dry-run fixes](docs/sample-buggy-calculator-fixes.patch)
 - [Task tracker report](docs/sample-task-tracker-report.md)
+- [Task tracker dry-run fixes](docs/sample-task-tracker-fixes.patch)
 - [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
 
 ## Quick Start
@@ -53,8 +56,10 @@ python -m pip install -e ".[dev]"
 python -m pytest
 agentic-testops audit examples/buggy_calculator \
   --rerun-failures \
+  --suggest-fixes \
   -o reports/buggy-calculator-report.md \
-  --json-output reports/buggy-calculator-report.json
+  --json-output reports/buggy-calculator-report.json \
+  --fix-output reports/buggy-calculator-fixes.patch
 ```
 
 To pass extra pytest arguments, repeat `--pytest-arg`:
@@ -70,13 +75,15 @@ For a larger demo with multiple failure categories:
 ```bash
 agentic-testops audit examples/task_tracker \
   --rerun-failures \
+  --suggest-fixes \
   -o reports/task-tracker-report.md \
-  --json-output reports/task-tracker-report.json
+  --json-output reports/task-tracker-report.json \
+  --fix-output reports/task-tracker-fixes.patch
 ```
 
 ## Example Output
 
-```markdown
+````markdown
 # Agentic TestOps Audit Report
 
 - Status: **FAIL**
@@ -105,7 +112,21 @@ Repair advice:
 
 - Target: `calculator.py:2`
 - Action: Add explicit validation for the failing boundary input before the unsafe operation.
+
+## Dry-Run Fix Suggestions
+
+These diffs are review previews only. They are not applied automatically.
+
+```diff
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,2 +1,4 @@
+ def divide(a: float, b: float) -> float:
++    if b == 0:
++        raise ValueError("division by zero")
+     return a / b
 ```
+````
 
 ## Architecture
 
@@ -145,6 +166,7 @@ src/agentic_testops/
   parser.py       pytest output parser
   diagnoser.py    failure classification and repair advice
   patcher.py      structured patch proposal planner
+  fixer.py        conservative dry-run unified diff suggestions
   reporter.py     Markdown and JSON report generation
   models.py       shared dataclasses
 examples/
@@ -153,7 +175,9 @@ examples/
 docs/
   project-brief.md
   sample-buggy-calculator-report.md
+  sample-buggy-calculator-fixes.patch
   sample-task-tracker-report.md
+  sample-task-tracker-fixes.patch
 tests/
 .github/workflows/
   ci.yml
@@ -204,10 +228,11 @@ tests/
 
 ## Limitations
 
-- The first version suggests repairs but does not edit target code.
+- The tool suggests repairs but does not edit target code.
 - Pytest output parsing is intentionally conservative and may miss exotic plugin formats.
 - Diagnosis rules are heuristic; the report is designed to support human review, not replace it.
 - Patch proposals are planning hints, not executable code changes.
+- Dry-run diffs cover only conservative patterns and should be reviewed before use.
 
 ## License
 

@@ -95,6 +95,57 @@ Repair advice:
 - Guardrail tests:
   - `test_task_tracker.py::test_next_task_handles_empty_backlog`
 
+## Dry-Run Fix Suggestions
+
+These diffs are review previews only. They are not applied automatically.
+
+### 1. `test_task_tracker.py::test_create_task_accepts_priority_metadata`
+
+- Target: `task_tracker.py`
+- Confidence: `medium`
+- Summary: Accept optional `priority` metadata in `create_task`.
+- Explanation: The test calls the public function with a keyword argument that the implementation currently rejects.
+
+```diff
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -1,2 +1,2 @@
+-def create_task(title: str) -> dict:
+-    return {"title": title, "done": False}
++def create_task(title: str, priority=None) -> dict:
++    return {"title": title, "done": False, "priority": priority}
+```
+
+### 2. `test_task_tracker.py::test_completion_rate_uses_done_field`
+
+- Target: `task_tracker.py`
+- Confidence: `medium`
+- Summary: Read the observed `done` field instead of missing `completed`.
+- Explanation: The failing fixture uses `done`; aligning the accessed key removes the shape mismatch exposed by the test.
+
+```diff
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -6 +6 @@
+-    done_count = sum(1 for task in tasks if task["completed"])
++    done_count = sum(1 for task in tasks if task["done"])
+```
+
+### 3. `test_task_tracker.py::test_next_task_handles_empty_backlog`
+
+- Target: `task_tracker.py`
+- Confidence: `medium`
+- Summary: Return `None` when `sorted_tasks` is empty.
+- Explanation: The failing test documents the empty-backlog behavior, so the guard handles the boundary before index access.
+
+```diff
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -11,0 +12,2 @@
++    if not sorted_tasks:
++        return None
+```
+
 ## Raw Pytest Output
 
 ```text

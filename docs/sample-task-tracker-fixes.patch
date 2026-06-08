@@ -1,0 +1,19 @@
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -1,2 +1,2 @@
+-def create_task(title: str) -> dict:
+-    return {"title": title, "done": False}
++def create_task(title: str, priority=None) -> dict:
++    return {"title": title, "done": False, "priority": priority}
+
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -6 +6 @@
+-    done_count = sum(1 for task in tasks if task["completed"])
++    done_count = sum(1 for task in tasks if task["done"])
+
+--- a/task_tracker.py
++++ b/task_tracker.py
+@@ -11,0 +12,2 @@
++    if not sorted_tasks:
++        return None

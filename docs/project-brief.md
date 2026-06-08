@@ -8,7 +8,7 @@
 2. Parse noisy failure output into structured failure objects.
 3. Diagnose likely root causes.
 4. Rerun only failing node IDs to confirm reproducibility.
-5. Generate patch proposal objects and human-readable reports.
+5. Generate patch proposal objects, dry-run fix diffs, and human-readable reports.
 
 ## Technical Focus
 
@@ -21,11 +21,12 @@ The repository includes two intentionally failing Python projects:
 - `examples/buggy_calculator`: boundary input validation failures.
 - `examples/task_tracker`: API contract, data shape, and empty-state failures.
 
-The CLI produces Markdown and JSON reports. JSON output is designed to be machine-readable so another agent can consume the failure, diagnosis, rerun result, and patch proposal objects.
+The CLI produces Markdown reports, JSON reports, and optional `.patch` previews. JSON output is designed to be machine-readable so another agent can consume the failure, diagnosis, rerun result, patch proposal objects, and dry-run fix suggestions.
 
 ## Evaluation Signals
 
 - Unit tests validate parser, diagnosis, patch proposal, and report behavior.
+- Fix suggestion tests verify that generated diffs do not mutate target files.
 - Timeout and focused-rerun behavior are covered by tests.
 - GitHub Actions runs the tool on every push.
 - Sample reports are generated from real pytest output rather than handwritten fixtures.

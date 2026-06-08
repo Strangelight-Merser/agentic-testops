@@ -27,13 +27,16 @@ jobs:
           set +e
           agentic-testops audit examples/buggy_calculator \
             --rerun-failures \
+            --suggest-fixes \
             -o reports/buggy-calculator-report.md \
-            --json-output reports/buggy-calculator-report.json
+            --json-output reports/buggy-calculator-report.json \
+            --fix-output reports/buggy-calculator-fixes.patch
           rc=$?
           set -e
           test "$rc" -eq 1
           test -f reports/buggy-calculator-report.md
           test -f reports/buggy-calculator-report.json
+          test -f reports/buggy-calculator-fixes.patch
 
       - name: Upload sample reports
         uses: actions/upload-artifact@v4

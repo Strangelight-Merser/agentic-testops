@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from agentic_testops.diagnoser import diagnose_failures
-from agentic_testops.models import AuditReport, Failure, PatchProposal, TestRun
+from agentic_testops.models import AuditReport, Failure, FixSuggestion, PatchProposal, TestRun
 from agentic_testops.reporter import render_markdown
 
 
@@ -77,3 +77,24 @@ def test_json_report_uses_portable_python_command() -> None:
     data = report.to_dict()
 
     assert data["command"] == ["python", "-m", "pytest", "-q"]
+
+
+def test_render_markdown_contains_dry_run_fix_suggestion() -> None:
+    failure = Failure(nodeid="test_app.py::test_case", headline="AssertionError", error_type="AssertionError")
+    run = TestRun(["python", "-m", "pytest"], Path("."), 1, "failed", "", 0.1)
+    suggestion = FixSuggestion(
+        failure_nodeid=failure.nodeid,
+        target_file="app.py",
+        title="Patch behavior",
+        explanation="Dry-run only.",
+        confidence="medium",
+        diff="--- a/app.py\n+++ b/app.py\n@@ -1 +1 @@\n-old\n+new",
+        guardrail_tests=[failure.nodeid],
+    )
+    report = AuditReport(Path("."), run, [failure], diagnose_failures([failure], run), fix_suggestions=[suggestion])
+
+    markdown = render_markdown(report)
+
+    assert "## Dry-Run Fix Suggestions" in markdown
+    assert "```diff" in markdown
+    assert "--- a/app.py" in markdown

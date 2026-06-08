@@ -8,7 +8,7 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.11668029199063312,
+  "duration_seconds": 0.12139512501016725,
   "passed": false,
   "timed_out": false,
   "failures": [
@@ -143,6 +143,41 @@
       ]
     }
   ],
+  "fix_suggestions": [
+    {
+      "failure_nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
+      "target_file": "task_tracker.py",
+      "title": "Accept optional `priority` metadata in `create_task`.",
+      "explanation": "The test calls the public function with a keyword argument that the implementation currently rejects.",
+      "confidence": "medium",
+      "diff": "--- a/task_tracker.py\n+++ b/task_tracker.py\n@@ -1,2 +1,2 @@\n-def create_task(title: str) -> dict:\n-    return {\"title\": title, \"done\": False}\n+def create_task(title: str, priority=None) -> dict:\n+    return {\"title\": title, \"done\": False, \"priority\": priority}",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_create_task_accepts_priority_metadata"
+      ]
+    },
+    {
+      "failure_nodeid": "test_task_tracker.py::test_completion_rate_uses_done_field",
+      "target_file": "task_tracker.py",
+      "title": "Read the observed `done` field instead of missing `completed`.",
+      "explanation": "The failing fixture uses `done`; aligning the accessed key removes the shape mismatch exposed by the test.",
+      "confidence": "medium",
+      "diff": "--- a/task_tracker.py\n+++ b/task_tracker.py\n@@ -6 +6 @@\n-    done_count = sum(1 for task in tasks if task[\"completed\"])\n+    done_count = sum(1 for task in tasks if task[\"done\"])",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_completion_rate_uses_done_field"
+      ]
+    },
+    {
+      "failure_nodeid": "test_task_tracker.py::test_next_task_handles_empty_backlog",
+      "target_file": "task_tracker.py",
+      "title": "Return `None` when `sorted_tasks` is empty.",
+      "explanation": "The failing test documents the empty-backlog behavior, so the guard handles the boundary before index access.",
+      "confidence": "medium",
+      "diff": "--- a/task_tracker.py\n+++ b/task_tracker.py\n@@ -11,0 +12,2 @@\n+    if not sorted_tasks:\n+        return None",
+      "guardrail_tests": [
+        "test_task_tracker.py::test_next_task_handles_empty_backlog"
+      ]
+    }
+  ],
   "rerun": {
     "command": [
       "python",
@@ -155,7 +190,7 @@
       "test_task_tracker.py::test_next_task_handles_empty_backlog"
     ],
     "returncode": 1,
-    "duration_seconds": 0.11274675000458956,
+    "duration_seconds": 0.11419774999376386,
     "passed": false,
     "timed_out": false
   }

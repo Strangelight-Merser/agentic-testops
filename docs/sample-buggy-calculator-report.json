@@ -8,7 +8,7 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.12146133399801329,
+  "duration_seconds": 0.12071941599424463,
   "passed": false,
   "timed_out": false,
   "failures": [
@@ -101,6 +101,30 @@
       ]
     }
   ],
+  "fix_suggestions": [
+    {
+      "failure_nodeid": "test_calculator.py::test_divide_rejects_zero",
+      "target_file": "calculator.py",
+      "title": "Validate `b` before division.",
+      "explanation": "The failing test expects invalid division input to be rejected with a domain error instead of leaking ZeroDivisionError.",
+      "confidence": "medium",
+      "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -1,0 +2,2 @@\n+    if b == 0:\n+        raise ValueError(\"division by zero\")",
+      "guardrail_tests": [
+        "test_calculator.py::test_divide_rejects_zero"
+      ]
+    },
+    {
+      "failure_nodeid": "test_calculator.py::test_average_empty_list_returns_zero",
+      "target_file": "calculator.py",
+      "title": "Return 0 before dividing by empty `values`.",
+      "explanation": "The failing traceback shows division by `len(...)`; the guard handles the empty input before the unsafe operation.",
+      "confidence": "medium",
+      "diff": "--- a/calculator.py\n+++ b/calculator.py\n@@ -7,0 +8,2 @@\n+    if not values:\n+        return 0",
+      "guardrail_tests": [
+        "test_calculator.py::test_average_empty_list_returns_zero"
+      ]
+    }
+  ],
   "rerun": {
     "command": [
       "python",
@@ -112,7 +136,7 @@
       "test_calculator.py::test_average_empty_list_returns_zero"
     ],
     "returncode": 1,
-    "duration_seconds": 0.1178432500018971,
+    "duration_seconds": 0.11508758399577346,
     "passed": false,
     "timed_out": false
   }

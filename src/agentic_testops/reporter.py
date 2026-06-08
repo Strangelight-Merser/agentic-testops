@@ -95,6 +95,32 @@ def render_markdown(report: AuditReport) -> str:
                 lines.append(f"  - `{nodeid}`")
             lines.append("")
 
+    if report.fix_suggestions:
+        lines.extend(
+            [
+                "## Dry-Run Fix Suggestions",
+                "",
+                "These diffs are review previews only. They are not applied automatically.",
+                "",
+            ]
+        )
+        for index, suggestion in enumerate(report.fix_suggestions, start=1):
+            lines.extend(
+                [
+                    f"### {index}. `{suggestion.failure_nodeid}`",
+                    "",
+                    f"- Target: `{suggestion.target_file}`",
+                    f"- Confidence: `{suggestion.confidence}`",
+                    f"- Summary: {suggestion.title}",
+                    f"- Explanation: {suggestion.explanation}",
+                    "",
+                    "```diff",
+                    suggestion.diff.rstrip("\n"),
+                    "```",
+                    "",
+                ]
+            )
+
     lines.extend(
         [
             "## Raw Pytest Output",

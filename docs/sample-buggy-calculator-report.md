@@ -69,6 +69,40 @@ Repair advice:
 - Guardrail tests:
   - `test_calculator.py::test_average_empty_list_returns_zero`
 
+## Dry-Run Fix Suggestions
+
+These diffs are review previews only. They are not applied automatically.
+
+### 1. `test_calculator.py::test_divide_rejects_zero`
+
+- Target: `calculator.py`
+- Confidence: `medium`
+- Summary: Validate `b` before division.
+- Explanation: The failing test expects invalid division input to be rejected with a domain error instead of leaking ZeroDivisionError.
+
+```diff
+--- a/calculator.py
++++ b/calculator.py
+@@ -1,0 +2,2 @@
++    if b == 0:
++        raise ValueError("division by zero")
+```
+
+### 2. `test_calculator.py::test_average_empty_list_returns_zero`
+
+- Target: `calculator.py`
+- Confidence: `medium`
+- Summary: Return 0 before dividing by empty `values`.
+- Explanation: The failing traceback shows division by `len(...)`; the guard handles the empty input before the unsafe operation.
+
+```diff
+--- a/calculator.py
++++ b/calculator.py
+@@ -7,0 +8,2 @@
++    if not values:
++        return 0
+```
+
 ## Raw Pytest Output
 
 ```text
