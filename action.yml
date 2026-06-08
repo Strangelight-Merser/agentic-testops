@@ -1,0 +1,125 @@
+name: Agentic TestOps
+description: Run pytest, diagnose failures, and generate repair-oriented TestOps artifacts.
+
+inputs:
+  project:
+    description: Path to the Python project to audit.
+    required: false
+    default: "."
+  output:
+    description: Markdown report output path.
+    required: false
+    default: "reports/agentic-testops-report.md"
+  json-output:
+    description: JSON report output path. Leave empty to skip JSON output.
+    required: false
+    default: "reports/agentic-testops-report.json"
+  fix-output:
+    description: Dry-run fix suggestion patch output path. Leave empty to skip patch output.
+    required: false
+    default: "reports/agentic-testops-fixes.patch"
+  rerun-failures:
+    description: Rerun parsed failing pytest node IDs.
+    required: false
+    default: "true"
+  suggest-fixes:
+    description: Generate conservative dry-run unified diff suggestions.
+    required: false
+    default: "true"
+  timeout:
+    description: Pytest timeout in seconds.
+    required: false
+    default: "120"
+  pytest-args:
+    description: Extra pytest arguments, parsed with Python shlex.
+    required: false
+    default: ""
+  fail-on-test-failure:
+    description: Whether the action should fail when audited tests fail.
+    required: false
+    default: "true"
+
+outputs:
+  exit-code:
+    description: Exit code returned by agentic-testops.
+    value: ${{ steps.audit.outputs.exit-code }}
+  report-path:
+    description: Markdown report path.
+    value: ${{ inputs.output }}
+  json-path:
+    description: JSON report path.
+    value: ${{ inputs.json-output }}
+  fix-path:
+    description: Dry-run fix suggestion patch path.
+    value: ${{ inputs.fix-output }}
+
+runs:
+  using: composite
+  steps:
+    - name: Install Agentic TestOps
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install -e "$GITHUB_ACTION_PATH"
+
+    - name: Run audit
+      id: audit
+      shell: bash
+      env:
+        AGENTIC_TESTOPS_PROJECT: ${{ inputs.project }}
+        AGENTIC_TESTOPS_OUTPUT: ${{ inputs.output }}
+        AGENTIC_TESTOPS_JSON_OUTPUT: ${{ inputs.json-output }}
+        AGENTIC_TESTOPS_FIX_OUTPUT: ${{ inputs.fix-output }}
+        AGENTIC_TESTOPS_RERUN_FAILURES: ${{ inputs.rerun-failures }}
+        AGENTIC_TESTOPS_SUGGEST_FIXES: ${{ inputs.suggest-fixes }}
+        AGENTIC_TESTOPS_TIMEOUT: ${{ inputs.timeout }}
+        AGENTIC_TESTOPS_PYTEST_ARGS: ${{ inputs.pytest-args }}
+        AGENTIC_TESTOPS_FAIL_ON_TEST_FAILURE: ${{ inputs.fail-on-test-failure }}
+      run: |
+        set -euo pipefail
+
+        mkdir -p "$(dirname "$AGENTIC_TESTOPS_OUTPUT")"
+        if [[ -n "$AGENTIC_TESTOPS_JSON_OUTPUT" ]]; then
+          mkdir -p "$(dirname "$AGENTIC_TESTOPS_JSON_OUTPUT")"
+        fi
+        if [[ -n "$AGENTIC_TESTOPS_FIX_OUTPUT" ]]; then
+          mkdir -p "$(dirname "$AGENTIC_TESTOPS_FIX_OUTPUT")"
+        fi
+
+        args=("$AGENTIC_TESTOPS_PROJECT" "--timeout" "$AGENTIC_TESTOPS_TIMEOUT" "-o" "$AGENTIC_TESTOPS_OUTPUT")
+        if [[ "$AGENTIC_TESTOPS_RERUN_FAILURES" == "true" ]]; then
+          args+=("--rerun-failures")
+        fi
+        if [[ "$AGENTIC_TESTOPS_SUGGEST_FIXES" == "true" ]]; then
+          args+=("--suggest-fixes")
+        fi
+        if [[ -n "$AGENTIC_TESTOPS_JSON_OUTPUT" ]]; then
+          args+=("--json-output" "$AGENTIC_TESTOPS_JSON_OUTPUT")
+        fi
+        if [[ -n "$AGENTIC_TESTOPS_FIX_OUTPUT" ]]; then
+          args+=("--fix-output" "$AGENTIC_TESTOPS_FIX_OUTPUT")
+        fi
+
+        if [[ -n "$AGENTIC_TESTOPS_PYTEST_ARGS" ]]; then
+          while IFS= read -r pytest_arg; do
+            args+=("--pytest-arg=$pytest_arg")
+          done < <(python - "$AGENTIC_TESTOPS_PYTEST_ARGS" <<'PY'
+        import shlex
+        import sys
+
+        for arg in shlex.split(sys.argv[1]):
+            print(arg)
+        PY
+        )
+        fi
+
+        set +e
+        agentic-testops audit "${args[@]}"
+        rc=$?
+        set -e
+        echo "exit-code=$rc" >> "$GITHUB_OUTPUT"
+
+        if [[ "$AGENTIC_TESTOPS_FAIL_ON_TEST_FAILURE" == "true" && "$rc" -ne 0 ]]; then
+          exit "$rc"
+        fi
+        exit 0

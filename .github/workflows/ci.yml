@@ -38,6 +38,25 @@ jobs:
           test -f reports/buggy-calculator-report.json
           test -f reports/buggy-calculator-fixes.patch
 
+      - name: Smoke test composite action
+        id: action-smoke
+        uses: ./
+        with:
+          project: examples/task_tracker
+          output: reports/action-task-tracker-report.md
+          json-output: reports/action-task-tracker-report.json
+          fix-output: reports/action-task-tracker-fixes.patch
+          rerun-failures: "true"
+          suggest-fixes: "true"
+          fail-on-test-failure: "false"
+
+      - name: Verify composite action outputs
+        run: |
+          test "${{ steps.action-smoke.outputs.exit-code }}" -eq 1
+          test -f reports/action-task-tracker-report.md
+          test -f reports/action-task-tracker-report.json
+          test -f reports/action-task-tracker-fixes.patch
+
       - name: Upload sample reports
         uses: actions/upload-artifact@v4
         with:

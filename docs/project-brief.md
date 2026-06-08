@@ -30,6 +30,7 @@ The CLI produces Markdown reports, JSON reports, and optional `.patch` previews.
 - Fix suggestion tests verify that generated diffs do not mutate target files.
 - Timeout and focused-rerun behavior are covered by tests.
 - GitHub Actions runs the tool on every push.
+- A reusable composite GitHub Action lets other repositories generate the same reports in CI.
 - Sample reports are generated from real pytest output rather than handwritten fixtures.
 - The design avoids requiring an API key for the base demo, which improves reproducibility.
 

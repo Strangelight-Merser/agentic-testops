@@ -37,6 +37,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Writes machine-readable JSON for later agent orchestration.
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`.
+- Ships as a reusable GitHub Action for CI report generation.
 - Includes two deliberately failing example projects.
 - Includes unit tests and GitHub Actions CI.
 
@@ -48,6 +49,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - [Task tracker report](docs/sample-task-tracker-report.md)
 - [Task tracker dry-run fixes](docs/sample-task-tracker-fixes.patch)
 - [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
+- [GitHub Action usage](docs/github-action.md)
 
 ## Quick Start
 
@@ -67,6 +69,21 @@ To pass extra pytest arguments, repeat `--pytest-arg`:
 ```bash
 agentic-testops audit . --pytest-arg tests/test_parser.py --pytest-arg=-q
 ```
+
+## GitHub Action
+
+```yaml
+- uses: Strangelight-Merser/agentic-testops@main
+  with:
+    project: "."
+    output: reports/agentic-testops-report.md
+    json-output: reports/agentic-testops-report.json
+    fix-output: reports/agentic-testops-fixes.patch
+    rerun-failures: "true"
+    suggest-fixes: "true"
+```
+
+See [GitHub Action usage](docs/github-action.md) for a complete workflow with artifact upload.
 
 The example project should fail because `divide(10, 0)` raises `ZeroDivisionError` while the test expects `ValueError`, and `average([])` also divides by zero. That is intentional: it demonstrates how the tool converts raw pytest output into repair advice.
 
@@ -184,6 +201,7 @@ docs/
 tests/
 .github/workflows/
   ci.yml
+action.yml
 ```
 
 ## Two-Week Build Plan Before June 30
