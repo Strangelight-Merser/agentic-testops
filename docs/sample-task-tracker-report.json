@@ -8,9 +8,10 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.12139512501016725,
+  "duration_seconds": 0.1293862090096809,
   "passed": false,
   "timed_out": false,
+  "junit_xml_available": true,
   "failures": [
     {
       "nodeid": "test_task_tracker.py::test_create_task_accepts_priority_metadata",
@@ -190,8 +191,9 @@
       "test_task_tracker.py::test_next_task_handles_empty_backlog"
     ],
     "returncode": 1,
-    "duration_seconds": 0.11419774999376386,
+    "duration_seconds": 0.11851666599977762,
     "passed": false,
-    "timed_out": false
+    "timed_out": false,
+    "junit_xml_available": true
   }
 }

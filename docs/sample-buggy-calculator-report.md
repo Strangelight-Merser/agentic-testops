@@ -6,6 +6,7 @@
 - Duration: `0.12s`
 - Return code: `1`
 - Parsed failures: `2`
+- Structured results: `JUnit XML`
 
 ## Agentic Rerun
 

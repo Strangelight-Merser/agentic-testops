@@ -3,15 +3,16 @@
 - Project: `examples/task_tracker`
 - Status: **FAIL**
 - Command: `python -m pytest --tb=short -q`
-- Duration: `0.12s`
+- Duration: `0.13s`
 - Return code: `1`
 - Parsed failures: `3`
+- Structured results: `JUnit XML`
 
 ## Agentic Rerun
 
 - Status: **FAIL**
 - Command: `python -m pytest --tb=short -q test_task_tracker.py::test_create_task_accepts_priority_metadata test_task_tracker.py::test_completion_rate_uses_done_field test_task_tracker.py::test_next_task_handles_empty_backlog`
-- Duration: `0.11s`
+- Duration: `0.12s`
 
 ## Diagnosis
 

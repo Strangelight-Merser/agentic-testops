@@ -12,3 +12,16 @@ def test_run_pytest_returns_timeout_result(tmp_path) -> None:
     assert run.timed_out is True
     assert run.returncode == 124
     assert "timed out" in run.stderr
+
+
+def test_run_pytest_captures_junit_xml_without_leaking_temp_path(tmp_path) -> None:
+    (tmp_path / "test_fail.py").write_text(
+        "def test_fail():\n    assert False\n",
+        encoding="utf-8",
+    )
+
+    run = run_pytest(tmp_path)
+
+    assert run.returncode == 1
+    assert "<testsuite" in run.junit_xml
+    assert "generated xml file:" not in run.stdout

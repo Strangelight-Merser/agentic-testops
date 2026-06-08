@@ -8,9 +8,10 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.12071941599424463,
+  "duration_seconds": 0.1217885830119485,
   "passed": false,
   "timed_out": false,
+  "junit_xml_available": true,
   "failures": [
     {
       "nodeid": "test_calculator.py::test_divide_rejects_zero",
@@ -136,8 +137,9 @@
       "test_calculator.py::test_average_empty_list_returns_zero"
     ],
     "returncode": 1,
-    "duration_seconds": 0.11508758399577346,
+    "duration_seconds": 0.11530787499214057,
     "passed": false,
-    "timed_out": false
+    "timed_out": false,
+    "junit_xml_available": true
   }
 }

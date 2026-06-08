@@ -27,6 +27,7 @@ def render_markdown(report: AuditReport) -> str:
         f"- Duration: `{report.run.duration_seconds:.2f}s`",
         f"- Return code: `{report.run.returncode}`",
         f"- Parsed failures: `{len(report.failures)}`",
+        f"- Structured results: `{'JUnit XML' if report.run.junit_xml else 'unavailable'}`",
         "",
     ]
 

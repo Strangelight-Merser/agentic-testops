@@ -85,3 +85,78 @@ FAILED tests/test_math.py::TestMath::test_add - AssertionError: assert 3 == 4
 
     assert failures[0].nodeid == "tests/test_math.py::TestMath::test_add"
     assert failures[0].error_type == "AssertionError"
+
+
+def test_parse_junit_xml_failure_without_text_output() -> None:
+    run = TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=Path("."),
+        returncode=1,
+        stdout="",
+        stderr="",
+        duration_seconds=0.1,
+        junit_xml="""<?xml version="1.0" encoding="utf-8"?>
+<testsuites><testsuite tests="1" failures="1">
+  <testcase classname="tests.test_math" name="test_add">
+    <failure message="AssertionError: assert 3 == 4">tests/test_math.py:4: in test_add
+E   AssertionError: assert 3 == 4</failure>
+  </testcase>
+</testsuite></testsuites>
+""",
+    )
+
+    failures = parse_failures(run)
+
+    assert failures[0].nodeid == "tests/test_math.py::test_add"
+    assert failures[0].headline == "AssertionError: assert 3 == 4"
+    assert failures[0].file_path == "tests/test_math.py"
+    assert failures[0].line_number == 4
+
+
+def test_parse_junit_xml_class_based_nodeid() -> None:
+    run = TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=Path("."),
+        returncode=1,
+        stdout="",
+        stderr="",
+        duration_seconds=0.1,
+        junit_xml="""<testsuites><testsuite tests="1" failures="1">
+  <testcase classname="tests.test_math.TestMath" name="test_add">
+    <failure message="AssertionError">tests/test_math.py:8: in test_add
+E   AssertionError</failure>
+  </testcase>
+</testsuite></testsuites>
+""",
+    )
+
+    failures = parse_failures(run)
+
+    assert failures[0].nodeid == "tests/test_math.py::TestMath::test_add"
+
+
+def test_parse_junit_xml_uses_test_frame_for_nodeid_and_project_frame_for_location() -> None:
+    run = TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=Path("."),
+        returncode=1,
+        stdout="",
+        stderr="",
+        duration_seconds=0.1,
+        junit_xml="""<testsuites><testsuite tests="1" failures="1">
+  <testcase classname="examples.task_tracker.test_task_tracker" name="test_completion_rate_uses_done_field">
+    <failure message="KeyError: 'completed'">test_task_tracker.py:17: in test_completion_rate_uses_done_field
+    assert completion_rate(tasks) == 0.5
+task_tracker.py:6: in completion_rate
+    done_count = sum(1 for task in tasks if task["completed"])
+E   KeyError: 'completed'</failure>
+  </testcase>
+</testsuite></testsuites>
+""",
+    )
+
+    failures = parse_failures(run)
+
+    assert failures[0].nodeid == "test_task_tracker.py::test_completion_rate_uses_done_field"
+    assert failures[0].file_path == "task_tracker.py"
+    assert failures[0].line_number == 6

@@ -16,6 +16,7 @@ class TestRun:
     stderr: str
     duration_seconds: float
     timed_out: bool = False
+    junit_xml: str = ""
 
     @property
     def passed(self) -> bool:
@@ -82,6 +83,7 @@ class AuditReport:
             "duration_seconds": self.run.duration_seconds,
             "passed": self.run.passed,
             "timed_out": self.run.timed_out,
+            "junit_xml_available": bool(self.run.junit_xml),
             "failures": [failure.__dict__ for failure in self.failures],
             "diagnoses": [
                 {
@@ -102,6 +104,7 @@ class AuditReport:
                 "duration_seconds": self.rerun.duration_seconds,
                 "passed": self.rerun.passed,
                 "timed_out": self.rerun.timed_out,
+                "junit_xml_available": bool(self.rerun.junit_xml),
             }
             if self.rerun
             else None,

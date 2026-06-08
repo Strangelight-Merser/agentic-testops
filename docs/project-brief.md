@@ -5,7 +5,7 @@
 **Agentic TestOps** is a TestOps assistant prototype for Python projects. It automates a concrete feedback loop:
 
 1. Execute the target project's tests.
-2. Parse noisy failure output into structured failure objects.
+2. Parse JUnit XML and noisy fallback output into structured failure objects.
 3. Diagnose likely root causes.
 4. Rerun only failing node IDs to confirm reproducibility.
 5. Generate patch proposal objects, dry-run fix diffs, and human-readable reports.
@@ -26,6 +26,7 @@ The CLI produces Markdown reports, JSON reports, and optional `.patch` previews.
 ## Evaluation Signals
 
 - Unit tests validate parser, diagnosis, patch proposal, and report behavior.
+- Structured JUnit XML parsing is covered by parser and runner tests.
 - Fix suggestion tests verify that generated diffs do not mutate target files.
 - Timeout and focused-rerun behavior are covered by tests.
 - GitHub Actions runs the tool on every push.

@@ -22,7 +22,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 
 - `agentic-testops audit <project>` CLI.
 - Runs `python -m pytest --tb=short -q` in the target project.
-- Parses pytest failure summaries and traceback sections.
+- Parses pytest failures from JUnit XML first, with text-output parsing as a fallback.
 - Optionally reruns only parsed failing node IDs with `--rerun-failures`.
 - Converts pytest timeouts into structured reports instead of crashing.
 - Preserves user-supplied pytest arguments during focused reruns.
@@ -135,6 +135,9 @@ Target Python project
         |
         v
 Pytest runner
+        |
+        v
+JUnit XML + stdout/stderr capture
         |
         v
 Failure parser

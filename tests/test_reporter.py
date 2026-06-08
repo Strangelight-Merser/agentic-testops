@@ -70,6 +70,15 @@ def test_render_markdown_sanitizes_python_executable_and_marks_timeout() -> None
     assert "/tmp/custom/python" not in markdown
 
 
+def test_render_markdown_mentions_junit_xml_availability() -> None:
+    run = TestRun(["python", "-m", "pytest"], Path("."), 1, "failed", "", 0.1, junit_xml="<testsuites />")
+    report = AuditReport(Path("."), run, [], [])
+
+    markdown = render_markdown(report)
+
+    assert "Structured results: `JUnit XML`" in markdown
+
+
 def test_json_report_uses_portable_python_command() -> None:
     run = TestRun(["/tmp/custom/python", "-m", "pytest", "-q"], Path("."), 0, "1 passed", "", 0.1)
     report = AuditReport(Path("."), run, [], [])
@@ -77,6 +86,7 @@ def test_json_report_uses_portable_python_command() -> None:
     data = report.to_dict()
 
     assert data["command"] == ["python", "-m", "pytest", "-q"]
+    assert data["junit_xml_available"] is False
 
 
 def test_render_markdown_contains_dry_run_fix_suggestion() -> None:

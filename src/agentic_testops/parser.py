@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import xml.etree.ElementTree as ET
 
 from .models import Failure, TestRun
 
@@ -12,14 +13,53 @@ SHORT_SUMMARY = re.compile(r"^FAILED\s+(?P<nodeid>\S+)\s+-\s+(?P<headline>.+)$")
 
 def parse_failures(run: TestRun) -> list[Failure]:
     output = "\n".join(part for part in [run.stdout, run.stderr] if part)
-    if not output.strip() or run.passed:
+    if run.passed:
+        return []
+    if not output.strip() and not run.junit_xml:
         return []
 
-    section_failures = _parse_failure_sections(output)
+    junit_failures = _parse_junit_failures(run.junit_xml)
+    if junit_failures:
+        return junit_failures
+
     summary_failures = _parse_short_summary(output)
+    section_failures = _parse_failure_sections(output)
     if section_failures:
         return _merge_summary_nodeids(section_failures, summary_failures)
     return summary_failures
+
+
+def _parse_junit_failures(junit_xml: str) -> list[Failure]:
+    if not junit_xml.strip():
+        return []
+    try:
+        root = ET.fromstring(junit_xml)
+    except ET.ParseError:
+        return []
+
+    failures: list[Failure] = []
+    for testcase in root.iter("testcase"):
+        child = testcase.find("failure")
+        if child is None:
+            child = testcase.find("error")
+        if child is None:
+            continue
+        detail = (child.text or "").strip()
+        headline = child.attrib.get("message") or _headline_from_detail(detail) or "Test failed"
+        block = detail.splitlines()
+        parsed = _failure_from_block(testcase.attrib.get("name", "testcase"), block)
+        test_file_path = _first_trace_file(block)
+        failures.append(
+            Failure(
+                nodeid=_nodeid_from_junit(testcase, test_file_path),
+                headline=headline,
+                file_path=parsed.file_path,
+                line_number=parsed.line_number,
+                error_type=_error_type_from_headline(headline) or parsed.error_type,
+                detail=detail,
+            )
+        )
+    return failures
 
 
 def _parse_short_summary(output: str) -> list[Failure]:
@@ -39,6 +79,47 @@ def _parse_short_summary(output: str) -> list[Failure]:
             )
         )
     return failures
+
+
+def _headline_from_detail(detail: str) -> str | None:
+    for line in detail.splitlines():
+        line = line.strip()
+        if line.startswith("E   "):
+            return line.removeprefix("E   ").strip()
+    return None
+
+
+def _first_trace_file(block: list[str]) -> str | None:
+    for line in block:
+        frame = TRACE_FRAME.match(line.strip())
+        if frame:
+            return frame.group("path")
+    return None
+
+
+def _nodeid_from_junit(testcase: ET.Element, file_path: str | None = None) -> str:
+    classname = testcase.attrib.get("classname", "")
+    name = testcase.attrib.get("name", "testcase")
+    class_name = _class_name_from_junit(classname)
+    if file_path:
+        if class_name:
+            return f"{file_path}::{class_name}::{name}"
+        return f"{file_path}::{name}"
+    if not classname:
+        return name
+
+    parts = classname.split(".")
+    if class_name and len(parts) >= 2:
+        module_parts = parts[:-1]
+        return f"{'/'.join(module_parts)}.py::{class_name}::{name}"
+    return f"{'/'.join(parts)}.py::{name}"
+
+
+def _class_name_from_junit(classname: str) -> str | None:
+    if not classname:
+        return None
+    last = classname.split(".")[-1]
+    return last if last.startswith("Test") else None
 
 
 def _parse_failure_sections(output: str) -> list[Failure]:
