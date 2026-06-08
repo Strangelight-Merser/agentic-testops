@@ -38,6 +38,10 @@ inputs:
     description: Whether the action should fail when audited tests fail.
     required: false
     default: "true"
+  job-summary:
+    description: Whether to append the Markdown report and patch preview to the GitHub job summary.
+    required: false
+    default: "true"
 
 outputs:
   exit-code:
@@ -52,6 +56,9 @@ outputs:
   fix-path:
     description: Dry-run fix suggestion patch path.
     value: ${{ inputs.fix-output }}
+  summary-written:
+    description: Whether the action wrote to the GitHub job summary.
+    value: ${{ steps.audit.outputs.summary-written }}
 
 runs:
   using: composite
@@ -75,6 +82,7 @@ runs:
         AGENTIC_TESTOPS_TIMEOUT: ${{ inputs.timeout }}
         AGENTIC_TESTOPS_PYTEST_ARGS: ${{ inputs.pytest-args }}
         AGENTIC_TESTOPS_FAIL_ON_TEST_FAILURE: ${{ inputs.fail-on-test-failure }}
+        AGENTIC_TESTOPS_JOB_SUMMARY: ${{ inputs.job-summary }}
       run: |
         set -euo pipefail
 
@@ -118,6 +126,27 @@ runs:
         rc=$?
         set -e
         echo "exit-code=$rc" >> "$GITHUB_OUTPUT"
+        summary_written=false
+
+        if [[ "$AGENTIC_TESTOPS_JOB_SUMMARY" == "true" && -n "${GITHUB_STEP_SUMMARY:-}" && -f "$AGENTIC_TESTOPS_OUTPUT" ]]; then
+          {
+            echo "## Agentic TestOps"
+            echo
+            cat "$AGENTIC_TESTOPS_OUTPUT"
+            if [[ -n "$AGENTIC_TESTOPS_FIX_OUTPUT" && -f "$AGENTIC_TESTOPS_FIX_OUTPUT" ]]; then
+              echo
+              echo "<details><summary>Dry-run fix suggestions</summary>"
+              echo
+              echo '```diff'
+              sed -n '1,400p' "$AGENTIC_TESTOPS_FIX_OUTPUT"
+              echo '```'
+              echo
+              echo "</details>"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          summary_written=true
+        fi
+        echo "summary-written=$summary_written" >> "$GITHUB_OUTPUT"
 
         if [[ "$AGENTIC_TESTOPS_FAIL_ON_TEST_FAILURE" == "true" && "$rc" -ne 0 ]]; then
           exit "$rc"

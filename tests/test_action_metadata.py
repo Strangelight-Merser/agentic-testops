@@ -12,6 +12,9 @@ def test_action_metadata_exposes_core_inputs() -> None:
         "rerun-failures:",
         "suggest-fixes:",
         "fail-on-test-failure:",
+        "job-summary:",
+        "summary-written:",
+        "GITHUB_STEP_SUMMARY",
         "agentic-testops audit",
     ]:
         assert expected in text

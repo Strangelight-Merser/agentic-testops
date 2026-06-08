@@ -81,9 +81,10 @@ agentic-testops audit . --pytest-arg tests/test_parser.py --pytest-arg=-q
     fix-output: reports/agentic-testops-fixes.patch
     rerun-failures: "true"
     suggest-fixes: "true"
+    job-summary: "true"
 ```
 
-See [GitHub Action usage](docs/github-action.md) for a complete workflow with artifact upload.
+See [GitHub Action usage](docs/github-action.md) for a complete workflow with job summary output and artifact upload.
 
 The example project should fail because `divide(10, 0)` raises `ZeroDivisionError` while the test expects `ValueError`, and `average([])` also divides by zero. That is intentional: it demonstrates how the tool converts raw pytest output into repair advice.
 

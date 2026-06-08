@@ -48,11 +48,13 @@ jobs:
           fix-output: reports/action-task-tracker-fixes.patch
           rerun-failures: "true"
           suggest-fixes: "true"
+          job-summary: "true"
           fail-on-test-failure: "false"
 
       - name: Verify composite action outputs
         run: |
           test "${{ steps.action-smoke.outputs.exit-code }}" -eq 1
+          test "${{ steps.action-smoke.outputs.summary-written }}" = true
           test -f reports/action-task-tracker-report.md
           test -f reports/action-task-tracker-report.json
           test -f reports/action-task-tracker-fixes.patch

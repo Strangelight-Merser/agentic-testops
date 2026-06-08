@@ -31,6 +31,7 @@ jobs:
           fix-output: reports/agentic-testops-fixes.patch
           rerun-failures: "true"
           suggest-fixes: "true"
+          job-summary: "true"
           pytest-args: "tests -q"
 
       - uses: actions/upload-artifact@v4
@@ -53,3 +54,12 @@ Inputs:
 - `timeout`: pytest timeout in seconds.
 - `pytest-args`: extra pytest arguments parsed with Python `shlex`.
 - `fail-on-test-failure`: whether nonzero audit exit code should fail the action.
+- `job-summary`: whether to append the Markdown report and patch preview to the GitHub job summary.
+
+Outputs:
+
+- `exit-code`: exit code returned by `agentic-testops`.
+- `report-path`: Markdown report path.
+- `json-path`: JSON report path.
+- `fix-path`: dry-run patch path.
+- `summary-written`: whether the action wrote to `$GITHUB_STEP_SUMMARY`.
