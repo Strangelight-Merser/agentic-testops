@@ -13,7 +13,7 @@ def write_markdown_report(report: AuditReport, output_path: Path) -> None:
 
 def write_json_report(report: AuditReport, output_path: Path) -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False), encoding="utf-8")
+    output_path.write_text(json.dumps(report.to_dict(), indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
 def render_markdown(report: AuditReport) -> str:
@@ -21,7 +21,7 @@ def render_markdown(report: AuditReport) -> str:
     lines = [
         "# Agentic TestOps Audit Report",
         "",
-        f"- Project: `{report.project_path}`",
+        f"- Project: `{report.display_project_path}`",
         f"- Status: **{status}**",
         f"- Command: `{_render_command(report.run.command)}`",
         f"- Duration: `{report.run.duration_seconds:.2f}s`",

@@ -100,6 +100,30 @@ def test_suggest_unexpected_keyword_support(tmp_path: Path) -> None:
     assert '"priority": priority' in suggestions[0].diff
 
 
+def test_suggest_unexpected_keyword_support_for_multiline_signature(tmp_path: Path) -> None:
+    target = tmp_path / "task_tracker.py"
+    original = (
+        "def create_task(\n"
+        "    title,\n"
+        "):\n"
+        "    return {\"title\": title, \"done\": False}\n"
+    )
+    target.write_text(original, encoding="utf-8")
+    diagnosis = _diagnosis(
+        category="api-contract",
+        error_type="TypeError",
+        headline="TypeError: create_task() got an unexpected keyword argument 'priority'",
+        file_path="task_tracker.py",
+        line_number=1,
+    )
+
+    suggestions = suggest_fixes(tmp_path, [diagnosis], [_proposal(diagnosis)])
+
+    assert "priority=None," in suggestions[0].diff
+    assert '"priority": priority' in suggestions[0].diff
+    assert target.read_text(encoding="utf-8") == original
+
+
 def test_suggest_done_field_for_key_error(tmp_path: Path) -> None:
     (tmp_path / "task_tracker.py").write_text(
         "def completion_rate(tasks):\n    return sum(1 for task in tasks if task[\"completed\"])\n",

@@ -84,3 +84,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"Dry-run fix suggestions written to {args.fix_output}")
         return 0 if run.passed else 1
     return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

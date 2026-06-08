@@ -1,7 +1,21 @@
 from pathlib import Path
+import subprocess
+import sys
 
 from agentic_testops import cli
 from agentic_testops.models import FixSuggestion, TestRun
+
+
+def test_module_entrypoint_shows_help() -> None:
+    completed = subprocess.run(
+        [sys.executable, "-m", "agentic_testops.cli", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert completed.returncode == 0
+    assert "agentic-testops" in completed.stdout
 
 
 def test_rerun_preserves_user_pytest_args(monkeypatch, tmp_path) -> None:

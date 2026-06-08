@@ -2,7 +2,7 @@ from pathlib import Path
 
 from agentic_testops.diagnoser import diagnose_failures
 from agentic_testops.models import AuditReport, Failure, FixSuggestion, PatchProposal, TestRun
-from agentic_testops.reporter import render_markdown
+from agentic_testops.reporter import render_markdown, write_json_report
 
 
 def test_render_markdown_contains_repair_section() -> None:
@@ -87,6 +87,29 @@ def test_json_report_uses_portable_python_command() -> None:
 
     assert data["command"] == ["python", "-m", "pytest", "-q"]
     assert data["junit_xml_available"] is False
+
+
+def test_reports_use_public_project_path_for_absolute_targets(tmp_path: Path) -> None:
+    project_path = tmp_path / "secret-parent" / "demo_project"
+    run = TestRun(["python", "-m", "pytest"], project_path, 0, "1 passed", "", 0.1)
+    report = AuditReport(project_path, run, [], [])
+
+    markdown = render_markdown(report)
+    data = report.to_dict()
+
+    assert "Project: `demo_project`" in markdown
+    assert str(project_path) not in markdown
+    assert data["project_path"] == "demo_project"
+
+
+def test_write_json_report_ends_with_newline(tmp_path: Path) -> None:
+    run = TestRun(["python", "-m", "pytest"], Path("."), 0, "1 passed", "", 0.1)
+    report = AuditReport(Path("."), run, [], [])
+    output = tmp_path / "report.json"
+
+    write_json_report(report, output)
+
+    assert output.read_text(encoding="utf-8").endswith("\n")
 
 
 def test_render_markdown_contains_dry_run_fix_suggestion() -> None:

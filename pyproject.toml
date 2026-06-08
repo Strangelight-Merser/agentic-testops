@@ -9,9 +9,29 @@ description = "Agentic TestOps for Python projects: automated pytest execution, 
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
-authors = [{ name = "Agentic TestOps Contributors" }]
+authors = [{ name = "Strangelight-Merser" }]
+maintainers = [{ name = "Strangelight-Merser" }]
 keywords = ["agentic", "testops", "pytest", "debugging", "automation"]
 dependencies = []
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Software Development :: Quality Assurance",
+]
+
+[project.urls]
+Homepage = "https://github.com/Strangelight-Merser/agentic-testops"
+Repository = "https://github.com/Strangelight-Merser/agentic-testops"
+Issues = "https://github.com/Strangelight-Merser/agentic-testops/issues"
+Changelog = "https://github.com/Strangelight-Merser/agentic-testops/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0"]

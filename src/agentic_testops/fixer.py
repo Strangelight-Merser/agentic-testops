@@ -126,18 +126,26 @@ def _suggest_unexpected_keyword_support(lines: list[str], diagnosis: Diagnosis) 
 
     function_name = match.group("name")
     keyword = match.group("keyword")
-    def_index = _find_function_def(lines, function_name)
-    if def_index is None:
+    signature = _find_function_signature(lines, function_name)
+    if signature is None:
+        return None, "", ""
+    def_index, signature_end = signature
+
+    signature_text = "\n".join(lines[def_index : signature_end + 1])
+    if keyword in signature_text:
         return None, "", ""
 
-    def_line = lines[def_index]
-    if keyword in def_line:
-        return None, "", ""
-
-    prefix, suffix = def_line.rsplit(")", 1)
-    separator = "" if prefix.rstrip().endswith("(") else ", "
     changed = lines.copy()
-    changed[def_index] = f"{prefix}{separator}{keyword}=None){suffix}"
+    if def_index == signature_end:
+        def_line = lines[def_index]
+        if ")" not in def_line:
+            return None, "", ""
+        prefix, suffix = def_line.rsplit(")", 1)
+        separator = "" if prefix.rstrip().endswith("(") else ", "
+        changed[def_index] = f"{prefix}{separator}{keyword}=None){suffix}"
+    else:
+        argument_indent = _argument_indent(lines, def_index, signature_end)
+        changed.insert(signature_end, f"{argument_indent}{keyword}=None,")
 
     return_index = _find_return_dict_line(changed, def_index)
     if return_index is not None and keyword not in changed[return_index]:
@@ -201,12 +209,28 @@ def _candidate_indexes(line_number: int | None, lines: list[str]) -> list[int]:
     return indexes
 
 
-def _find_function_def(lines: list[str], function_name: str) -> int | None:
+def _find_function_signature(lines: list[str], function_name: str) -> tuple[int, int] | None:
     pattern = re.compile(rf"^\s*def\s+{re.escape(function_name)}\s*\(")
     for index, line in enumerate(lines):
-        if pattern.match(line):
-            return index
+        if not pattern.match(line):
+            continue
+        balance = line.count("(") - line.count(")")
+        if balance <= 0 and line.rstrip().endswith(":"):
+            return index, index
+        for end_index in range(index + 1, min(len(lines), index + 25)):
+            balance += lines[end_index].count("(") - lines[end_index].count(")")
+            if balance <= 0 and lines[end_index].rstrip().endswith(":"):
+                return index, end_index
     return None
+
+
+def _argument_indent(lines: list[str], def_index: int, signature_end: int) -> str:
+    for line in lines[def_index + 1 : signature_end]:
+        if line.strip():
+            return line[: len(line) - len(line.lstrip())]
+    def_line = lines[def_index]
+    def_indent = def_line[: len(def_line) - len(def_line.lstrip())]
+    return f"{def_indent}    "
 
 
 def _find_return_dict_line(lines: list[str], def_index: int) -> int | None:

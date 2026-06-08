@@ -205,45 +205,29 @@ tests/
 action.yml
 ```
 
-## Two-Week Build Plan Before June 30
+## Project Status
 
-### Phase 1: Runnable Core
+- Runnable CLI and reusable GitHub Action are implemented.
+- Markdown, JSON, and dry-run patch artifacts are generated from real pytest runs.
+- JUnit XML parsing is preferred, with conservative text parsing as a fallback.
+- Focused reruns, timeout reports, and portable command rendering are covered by tests.
+- Public examples demonstrate boundary validation, API contract, data shape, and empty-state failures.
+- Maintenance files are provided for issues, pull requests, contribution workflow, release checks, and security reporting.
 
-- Build the CLI, pytest runner, parser, diagnosis rules, reports, and example project.
-- Keep the system dependency-light so reviewers can run it quickly.
-- Add unit tests for each internal stage.
-- Status: implemented.
+## Maintenance
 
-### Phase 2: Agentic Loop
-
-- Add a `rerun` mode that reruns only failed node IDs.
-- Add patch proposal objects in JSON: target file, suspected line, proposed edit summary, and confidence.
-- Add a project memory file that records repeated failures and whether prior advice worked.
-- Status: rerun and patch proposals implemented; persistent project memory remains planned.
-
-### Phase 3: Demonstration Quality
-
-- Add one larger sample project with three bug types.
-- Generate before/after reports and screenshots or terminal transcripts.
-- Improve README with badges, design goals, limitations, and evaluation metrics.
-- Status: larger sample project, generated reports, and CI are implemented.
-
-### Phase 4: Project Polish
-
-- Publish to GitHub with a clean commit history.
-- Add a short demo GIF or terminal recording.
-- Write a concise project positioning paragraph:
-  - real tool invocation
-  - test execution
-  - error diagnosis
-  - continuous improvement loop
-  - extensible automation boundary
+- [Contributing guide](CONTRIBUTING.md)
+- [Changelog](CHANGELOG.md)
+- [Security policy](SECURITY.md)
+- [Release checklist](docs/release-checklist.md)
+- [GitHub Action usage](docs/github-action.md)
 
 ## Roadmap
 
-- Optional OpenAI-powered explanation layer.
-- GitHub Actions integration that uploads reports as artifacts.
-- AST-aware patch suggestion.
+- Safer AST-backed edit planning for more Python syntax shapes.
+- Optional OpenAI-powered explanation layer over deterministic diagnostics.
+- GitHub Checks integration that comments summaries on pull requests.
+- Historical project memory for repeated failures and flaky-test signals.
 - Multi-agent roles: runner, triager, patch planner, verifier.
 - Flaky-test detection through repeated runs.
 - Coverage-guided test gap analysis.

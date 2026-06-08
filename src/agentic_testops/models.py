@@ -75,9 +75,13 @@ class AuditReport:
     fix_suggestions: list[FixSuggestion] = field(default_factory=list)
     rerun: TestRun | None = None
 
+    @property
+    def display_project_path(self) -> str:
+        return _portable_project_path(self.project_path)
+
     def to_dict(self) -> dict[str, Any]:
         return {
-            "project_path": str(self.project_path),
+            "project_path": self.display_project_path,
             "command": _portable_command(self.run.command),
             "returncode": self.run.returncode,
             "duration_seconds": self.run.duration_seconds,
@@ -115,3 +119,10 @@ def _portable_command(command: list[str]) -> list[str]:
     if len(command) >= 3 and command[1:3] == ["-m", "pytest"]:
         return ["python", *command[1:]]
     return command
+
+
+def _portable_project_path(project_path: Path) -> str:
+    if not project_path.is_absolute():
+        text = project_path.as_posix()
+        return text or "."
+    return project_path.name or "."
