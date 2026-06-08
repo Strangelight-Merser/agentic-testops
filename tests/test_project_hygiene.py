@@ -59,3 +59,17 @@ def test_ci_runs_supported_python_matrix() -> None:
 
     assert 'python-version: ["3.9", "3.10", "3.11", "3.12"]' in text
     assert "python-version: ${{ matrix.python-version }}" in text
+
+
+def test_github_actions_examples_use_current_node_runtime_actions() -> None:
+    old_checkout = "actions/checkout@" + "v4"
+    old_setup_python = "actions/setup-python@" + "v5"
+    old_upload_artifact = "actions/upload-artifact@" + "v4"
+    for path in [Path(".github/workflows/ci.yml"), Path("docs/github-action.md")]:
+        text = path.read_text(encoding="utf-8")
+        assert "actions/checkout@v6" in text
+        assert "actions/setup-python@v6" in text
+        assert "actions/upload-artifact@v7" in text
+        assert old_checkout not in text
+        assert old_setup_python not in text
+        assert old_upload_artifact not in text

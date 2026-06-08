@@ -21,6 +21,7 @@ All notable changes to Agentic TestOps are documented here.
 - Public reports use a safe display path for absolute project targets.
 - Public project wording is general-purpose and not tied to external application tracks.
 - CI now validates the supported Python version range from 3.9 through 3.12.
+- GitHub workflow examples use current official action major versions for the Node 24 runtime.
 
 ### Notes
 
