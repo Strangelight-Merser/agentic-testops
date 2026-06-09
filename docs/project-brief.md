@@ -27,6 +27,7 @@ The CLI produces Markdown reports, JSON reports, and optional `.patch` previews.
 
 - Unit tests validate parser, diagnosis, patch proposal, and report behavior.
 - Structured JUnit XML parsing is covered by parser and runner tests.
+- API-contract patch target localization follows explicit test imports before falling back to a project scan.
 - Fix suggestion tests verify that generated diffs do not mutate target files.
 - Timeout and focused-rerun behavior are covered by tests.
 - GitHub Actions runs the tool on every push.
@@ -36,7 +37,7 @@ The CLI produces Markdown reports, JSON reports, and optional `.patch` previews.
 
 ## Next Extensions
 
-- AST-aware line localization for patch proposals.
+- Broader AST-aware line localization for patch proposals.
 - Optional LLM explanation layer over deterministic diagnostics.
 - GitHub Checks integration that comments summaries on pull requests.
 - Multi-agent runtime split: runner, triager, patch planner, verifier.

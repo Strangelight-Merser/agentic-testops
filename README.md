@@ -36,6 +36,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Writes a professional Markdown report.
 - Writes machine-readable JSON for later agent orchestration.
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
+- Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`.
 - Ships as a reusable GitHub Action for CI report generation.
 - Includes two deliberately failing example projects.
@@ -224,7 +225,7 @@ action.yml
 
 ## Roadmap
 
-- Safer AST-backed edit planning for more Python syntax shapes.
+- Safer AST-backed edit planning for more Python syntax shapes and call patterns.
 - Optional OpenAI-powered explanation layer over deterministic diagnostics.
 - GitHub Checks integration that comments summaries on pull requests.
 - Historical project memory for repeated failures and flaky-test signals.

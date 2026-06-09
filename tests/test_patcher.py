@@ -50,6 +50,66 @@ def test_propose_patch_locates_api_contract_implementation(tmp_path) -> None:
     assert proposals[0].target_line == 1
 
 
+def test_propose_patch_prefers_imported_api_contract_target_over_global_match(tmp_path) -> None:
+    (tmp_path / "aaa_wrong.py").write_text("def create_task(title):\n    return {'wrong': True}\n", encoding="utf-8")
+    (tmp_path / "task_tracker.py").write_text("def create_task(title):\n    return {}\n", encoding="utf-8")
+    (tmp_path / "test_task_tracker.py").write_text(
+        "from task_tracker import create_task as make_task\n\n"
+        "def test_case():\n"
+        "    make_task('x', priority=1)\n",
+        encoding="utf-8",
+    )
+    failure = Failure(
+        nodeid="test_task_tracker.py::test_case",
+        headline="TypeError: create_task() got an unexpected keyword argument 'priority'",
+        file_path="test_task_tracker.py",
+        line_number=4,
+        error_type="TypeError",
+    )
+    diagnosis = Diagnosis(
+        failure=failure,
+        category="api-contract",
+        confidence="medium",
+        summary="Call and callee contract disagree.",
+    )
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "task_tracker.py"
+    assert proposals[0].target_line == 1
+
+
+def test_propose_patch_resolves_package_module_import(tmp_path) -> None:
+    package = tmp_path / "todo"
+    package.mkdir()
+    (package / "__init__.py").write_text("", encoding="utf-8")
+    (package / "tasks.py").write_text("def create_task(title):\n    return {}\n", encoding="utf-8")
+    (tmp_path / "test_task_tracker.py").write_text(
+        "from todo.tasks import create_task\n\n"
+        "def test_case():\n"
+        "    create_task('x', priority=1)\n",
+        encoding="utf-8",
+    )
+    failure = Failure(
+        nodeid="test_task_tracker.py::test_case",
+        headline="TypeError: create_task() got an unexpected keyword argument 'priority'",
+        file_path="test_task_tracker.py",
+        line_number=4,
+        error_type="TypeError",
+    )
+    diagnosis = Diagnosis(
+        failure=failure,
+        category="api-contract",
+        confidence="medium",
+        summary="Call and callee contract disagree.",
+    )
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "todo/tasks.py"
+    assert proposals[0].target_line == 1
+
+
 def test_propose_patch_skips_virtual_environment_matches(tmp_path) -> None:
     (tmp_path / ".venv").mkdir()
     (tmp_path / ".venv" / "task_tracker.py").write_text(

@@ -103,16 +103,85 @@ def _locate_api_contract_target(diagnosis: Diagnosis, project_path: Path | None)
         return None
 
     function_name = match.group("name")
+    imported_target = _locate_imported_function_target(project_path, diagnosis.failure.file_path, function_name)
+    if imported_target:
+        return imported_target
+
+    return _locate_function_in_project(project_path, function_name)
+
+
+def _locate_imported_function_target(
+    project_path: Path,
+    failure_file: str | None,
+    function_name: str,
+) -> tuple[str, int] | None:
+    if not failure_file:
+        return None
+    test_path = (project_path / failure_file).resolve()
+    if not _is_relative_to(test_path, project_path) or not test_path.exists():
+        return None
+
+    try:
+        tree = ast.parse(test_path.read_text(encoding="utf-8"))
+    except (SyntaxError, UnicodeDecodeError):
+        return None
+
+    for module_path in _imported_module_paths(tree, test_path, project_path, function_name):
+        located = _locate_function_in_file(module_path, project_path, function_name)
+        if located:
+            return located
+    return None
+
+
+def _imported_module_paths(
+    tree: ast.AST,
+    test_path: Path,
+    project_path: Path,
+    function_name: str,
+) -> list[Path]:
+    paths: list[Path] = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.ImportFrom):
+            continue
+        if not any(alias.name == function_name or alias.asname == function_name for alias in node.names):
+            continue
+        paths.extend(_module_file_candidates(node, test_path, project_path))
+    return paths
+
+
+def _module_file_candidates(node: ast.ImportFrom, test_path: Path, project_path: Path) -> list[Path]:
+    module_parts = node.module.split(".") if node.module else []
+    if node.level:
+        root = test_path.parent
+        for _ in range(node.level - 1):
+            root = root.parent
+        module_root = root.joinpath(*module_parts)
+    else:
+        module_root = project_path.joinpath(*module_parts)
+    return [module_root.with_suffix(".py"), module_root / "__init__.py"]
+
+
+def _locate_function_in_project(project_path: Path, function_name: str) -> tuple[str, int] | None:
     for path in sorted(project_path.rglob("*.py")):
         if _should_skip_path(path, project_path):
             continue
-        try:
-            tree = ast.parse(path.read_text(encoding="utf-8"))
-        except (SyntaxError, UnicodeDecodeError):
-            continue
-        for node in ast.walk(tree):
-            if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function_name:
-                return path.relative_to(project_path).as_posix(), node.lineno
+        located = _locate_function_in_file(path, project_path, function_name)
+        if located:
+            return located
+    return None
+
+
+def _locate_function_in_file(path: Path, project_path: Path, function_name: str) -> tuple[str, int] | None:
+    path = path.resolve()
+    if not _is_relative_to(path, project_path) or not path.exists() or _should_skip_path(path, project_path):
+        return None
+    try:
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+    except (SyntaxError, UnicodeDecodeError):
+        return None
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name == function_name:
+            return path.relative_to(project_path).as_posix(), node.lineno
     return None
 
 
@@ -121,3 +190,11 @@ def _should_skip_path(path: Path, project_path: Path) -> bool:
     if any(part in IGNORED_DIRS for part in relative_parts):
         return True
     return path.name.startswith("test_") or "tests" in relative_parts
+
+
+def _is_relative_to(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+    except ValueError:
+        return False
+    return True

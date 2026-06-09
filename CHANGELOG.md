@@ -10,6 +10,7 @@ All notable changes to Agentic TestOps are documented here.
 - JUnit XML-first pytest failure parsing with text-output fallback.
 - Conservative dry-run fix suggestions that emit reviewable unified diffs.
 - Multi-line function signature support for conservative API-contract fix suggestions.
+- Import-aware API-contract target localization for patch proposals.
 - Focused reruns for parsed failing pytest node IDs.
 - Timeout handling that returns a structured report instead of crashing.
 - Public sample projects and generated reports.
