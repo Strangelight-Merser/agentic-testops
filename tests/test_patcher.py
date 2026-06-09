@@ -134,3 +134,70 @@ def test_propose_patch_skips_virtual_environment_matches(tmp_path) -> None:
     proposals = propose_patches([diagnosis], project_path=tmp_path)
 
     assert proposals[0].target_file == "task_tracker.py"
+
+
+def test_propose_patch_for_filesystem_boundary_failure() -> None:
+    failure = Failure(
+        nodeid="test_config.py::test_load_missing_config",
+        headline="FileNotFoundError: [Errno 2] No such file or directory: 'config.toml'",
+        file_path="config_loader.py",
+        line_number=7,
+        error_type="FileNotFoundError",
+    )
+    diagnosis = Diagnosis(
+        failure=failure,
+        category="filesystem-boundary",
+        confidence="medium",
+        summary="Missing path.",
+    )
+
+    proposals = propose_patches([diagnosis])
+
+    assert proposals[0].target_file == "config_loader.py"
+    assert proposals[0].target_line == 7
+    assert proposals[0].confidence == "medium"
+    assert "file boundary" in proposals[0].action
+
+
+def test_propose_patch_for_object_interface_failure() -> None:
+    failure = Failure(
+        nodeid="test_profiles.py::test_display_name_accepts_dict",
+        headline="AttributeError: 'dict' object has no attribute 'name'",
+        file_path="profiles.py",
+        line_number=3,
+        error_type="AttributeError",
+    )
+    diagnosis = Diagnosis(
+        failure=failure,
+        category="object-interface",
+        confidence="medium",
+        summary="Wrong object interface.",
+    )
+
+    proposals = propose_patches([diagnosis])
+
+    assert proposals[0].target_file == "profiles.py"
+    assert proposals[0].target_line == 3
+    assert "object interface" in proposals[0].action
+
+
+def test_propose_patch_for_symbol_resolution_failure() -> None:
+    failure = Failure(
+        nodeid="test_billing.py::test_total_includes_tax",
+        headline="NameError: name 'subtotal' is not defined",
+        file_path="billing.py",
+        line_number=4,
+        error_type="NameError",
+    )
+    diagnosis = Diagnosis(
+        failure=failure,
+        category="symbol-resolution",
+        confidence="medium",
+        summary="Missing symbol.",
+    )
+
+    proposals = propose_patches([diagnosis])
+
+    assert proposals[0].target_file == "billing.py"
+    assert proposals[0].target_line == 4
+    assert "missing symbol" in proposals[0].action

@@ -42,6 +42,30 @@ jobs:
           test -f reports/buggy-calculator-report.json
           test -f reports/buggy-calculator-fixes.patch
 
+      - name: Smoke test service health diagnostics
+        run: |
+          set +e
+          agentic-testops audit examples/service_health \
+            --rerun-failures \
+            --suggest-fixes \
+            -o reports/service-health-report.md \
+            --json-output reports/service-health-report.json \
+            --fix-output reports/service-health-fixes.patch
+          rc=$?
+          set -e
+          test "$rc" -eq 1
+          test -f reports/service-health-report.md
+          test -f reports/service-health-report.json
+          test -f reports/service-health-fixes.patch
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("reports/service-health-report.json").read_text(encoding="utf-8"))
+          categories = {diagnosis["category"] for diagnosis in report["diagnoses"]}
+          assert {"filesystem-boundary", "object-interface", "symbol-resolution"} <= categories
+          PY
+
       - name: Smoke test composite action
         id: action-smoke
         uses: ./

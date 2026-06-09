@@ -16,10 +16,11 @@ The project treats testing as an active automation primitive rather than a passi
 
 ## Current Demo
 
-The repository includes two intentionally failing Python projects:
+The repository includes three intentionally failing Python projects:
 
 - `examples/buggy_calculator`: boundary input validation failures.
 - `examples/task_tracker`: API contract, data shape, and empty-state failures.
+- `examples/service_health`: filesystem boundary, object interface, and symbol resolution failures.
 
 The CLI produces Markdown reports, JSON reports, and optional `.patch` previews. JSON output is designed to be machine-readable so another agent can consume the failure, diagnosis, rerun result, patch proposal objects, and dry-run fix suggestions.
 

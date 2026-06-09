@@ -82,6 +82,39 @@ def _proposal_for(diagnosis: Diagnosis, project_path: Path | None) -> PatchPropo
             guardrail_tests=guardrails,
         )
 
+    if diagnosis.category == "filesystem-boundary":
+        return PatchProposal(
+            failure_nodeid=failure.nodeid,
+            target_file=target_file,
+            target_line=target_line,
+            action="Make the file boundary explicit by validating the path, creating required fixtures, or handling the missing path case.",
+            rationale="The traceback shows runtime file access reaching a missing, inaccessible, or invalid path.",
+            confidence=diagnosis.confidence,
+            guardrail_tests=guardrails,
+        )
+
+    if diagnosis.category == "object-interface":
+        return PatchProposal(
+            failure_nodeid=failure.nodeid,
+            target_file=target_file,
+            target_line=target_line,
+            action="Align the expected object interface by normalizing the input shape or using the interface actually provided at runtime.",
+            rationale="The failing access expects an attribute or method that the runtime object does not expose.",
+            confidence=diagnosis.confidence,
+            guardrail_tests=guardrails,
+        )
+
+    if diagnosis.category == "symbol-resolution":
+        return PatchProposal(
+            failure_nodeid=failure.nodeid,
+            target_file=target_file,
+            target_line=target_line,
+            action="Resolve the missing symbol by importing, defining, passing, or consistently renaming it near the failing scope.",
+            rationale="The code references a name that is unavailable when the failing path executes.",
+            confidence=diagnosis.confidence,
+            guardrail_tests=guardrails,
+        )
+
     return PatchProposal(
         failure_nodeid=failure.nodeid,
         target_file=target_file,

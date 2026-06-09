@@ -160,3 +160,32 @@ E   KeyError: 'completed'</failure>
     assert failures[0].nodeid == "test_task_tracker.py::test_completion_rate_uses_done_field"
     assert failures[0].file_path == "task_tracker.py"
     assert failures[0].line_number == 6
+
+
+def test_parse_junit_xml_prefers_project_frame_over_standard_library_frame() -> None:
+    run = TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=Path("."),
+        returncode=1,
+        stdout="",
+        stderr="",
+        duration_seconds=0.1,
+        junit_xml="""<testsuites><testsuite tests="1" failures="1">
+  <testcase classname="examples.service_health.test_service_health" name="test_load_config_handles_missing_file">
+    <failure message="FileNotFoundError: [Errno 2] No such file or directory: 'missing.env'">test_service_health.py:7: in test_load_config_handles_missing_file
+    assert load_config("missing.env") == {"raw": ""}
+service_health.py:7: in load_config
+    text = Path(path).read_text(encoding="utf-8")
+/opt/python/lib/pathlib.py:537: in open
+    return io.open(self, mode)
+E   FileNotFoundError: [Errno 2] No such file or directory: 'missing.env'</failure>
+  </testcase>
+</testsuite></testsuites>
+""",
+    )
+
+    failures = parse_failures(run)
+
+    assert failures[0].nodeid == "test_service_health.py::test_load_config_handles_missing_file"
+    assert failures[0].file_path == "service_health.py"
+    assert failures[0].line_number == 7

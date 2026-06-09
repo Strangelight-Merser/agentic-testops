@@ -24,6 +24,13 @@ Use this checklist before tagging a public release.
      -o docs/sample-task-tracker-report.md \
      --json-output docs/sample-task-tracker-report.json \
      --fix-output docs/sample-task-tracker-fixes.patch
+
+   agentic-testops audit examples/service_health \
+     --rerun-failures \
+     --suggest-fixes \
+     -o docs/sample-service-health-report.md \
+     --json-output docs/sample-service-health-report.json \
+     --fix-output docs/sample-service-health-fixes.patch
    ```
 
 3. Verify generated patches apply to temporary copies of the example projects.

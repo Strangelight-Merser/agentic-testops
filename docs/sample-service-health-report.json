@@ -1,0 +1,165 @@
+{
+  "project_path": "examples/service_health",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "returncode": 1,
+  "duration_seconds": 0.12959879099798854,
+  "passed": false,
+  "timed_out": false,
+  "junit_xml_available": true,
+  "failures": [
+    {
+      "nodeid": "test_service_health.py::test_load_config_handles_missing_file",
+      "headline": "FileNotFoundError: Missing config file: missing.env",
+      "file_path": "service_health.py",
+      "line_number": 9,
+      "error_type": "FileNotFoundError",
+      "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
+    },
+    {
+      "nodeid": "test_service_health.py::test_display_name_accepts_dict_user",
+      "headline": "AttributeError: 'dict' object has no attribute 'name'",
+      "file_path": "service_health.py",
+      "line_number": 15,
+      "error_type": "AttributeError",
+      "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:15: in display_name\n    return user.name.title()\n           ^^^^^^^^^\nE   AttributeError: 'dict' object has no attribute 'name'"
+    },
+    {
+      "nodeid": "test_service_health.py::test_invoice_total_sums_items_with_tax",
+      "headline": "NameError: name 'subtotal' is not defined",
+      "file_path": "service_health.py",
+      "line_number": 20,
+      "error_type": "NameError",
+      "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\n           ^^^^^^^^\nE   NameError: name 'subtotal' is not defined"
+    }
+  ],
+  "diagnoses": [
+    {
+      "failure": {
+        "nodeid": "test_service_health.py::test_load_config_handles_missing_file",
+        "headline": "FileNotFoundError: Missing config file: missing.env",
+        "file_path": "service_health.py",
+        "line_number": 9,
+        "error_type": "FileNotFoundError",
+        "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
+      },
+      "category": "filesystem-boundary",
+      "confidence": "medium",
+      "summary": "The code crossed a filesystem boundary without handling a missing, inaccessible, or invalid path.",
+      "evidence": [
+        "test_service_health.py:7: in test_load_config_handles_missing_file",
+        "service_health.py:9: in load_config",
+        "E   FileNotFoundError: Missing config file: missing.env"
+      ],
+      "repair_advice": [
+        "Check whether the path should be created, injected as a fixture, or treated as optional input.",
+        "Avoid relying on the process working directory when the project can pass an explicit path.",
+        "Add tests for missing paths, directories, and permission-sensitive behavior where practical."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_service_health.py::test_display_name_accepts_dict_user",
+        "headline": "AttributeError: 'dict' object has no attribute 'name'",
+        "file_path": "service_health.py",
+        "line_number": 15,
+        "error_type": "AttributeError",
+        "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:15: in display_name\n    return user.name.title()\n           ^^^^^^^^^\nE   AttributeError: 'dict' object has no attribute 'name'"
+      },
+      "category": "object-interface",
+      "confidence": "medium",
+      "summary": "The code expected an object to expose an attribute or method that is not available at runtime.",
+      "evidence": [
+        "test_service_health.py:11: in test_display_name_accepts_dict_user",
+        "service_health.py:15: in display_name",
+        "E   AttributeError: 'dict' object has no attribute 'name'"
+      ],
+      "repair_advice": [
+        "Compare the runtime object type with the interface the code expects at the failing access.",
+        "If the object shape changed, update the adapter or compatibility layer instead of only changing the test.",
+        "Add a regression test for the object variant that lacks the attribute."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_service_health.py::test_invoice_total_sums_items_with_tax",
+        "headline": "NameError: name 'subtotal' is not defined",
+        "file_path": "service_health.py",
+        "line_number": 20,
+        "error_type": "NameError",
+        "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\n           ^^^^^^^^\nE   NameError: name 'subtotal' is not defined"
+      },
+      "category": "symbol-resolution",
+      "confidence": "medium",
+      "summary": "The implementation referenced a name that is not defined in the active scope.",
+      "evidence": [
+        "test_service_health.py:15: in test_invoice_total_sums_items_with_tax",
+        "service_health.py:20: in invoice_total",
+        "E   NameError: name 'subtotal' is not defined"
+      ],
+      "repair_advice": [
+        "Check whether the missing name should be imported, assigned earlier, or passed as an argument.",
+        "Inspect recent renames around the failing line before adding a new global symbol.",
+        "Add a focused regression test that exercises the code path where the name should be available."
+      ]
+    }
+  ],
+  "patch_proposals": [
+    {
+      "failure_nodeid": "test_service_health.py::test_load_config_handles_missing_file",
+      "target_file": "service_health.py",
+      "target_line": 9,
+      "action": "Make the file boundary explicit by validating the path, creating required fixtures, or handling the missing path case.",
+      "rationale": "The traceback shows runtime file access reaching a missing, inaccessible, or invalid path.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_service_health.py::test_load_config_handles_missing_file"
+      ]
+    },
+    {
+      "failure_nodeid": "test_service_health.py::test_display_name_accepts_dict_user",
+      "target_file": "service_health.py",
+      "target_line": 15,
+      "action": "Align the expected object interface by normalizing the input shape or using the interface actually provided at runtime.",
+      "rationale": "The failing access expects an attribute or method that the runtime object does not expose.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_service_health.py::test_display_name_accepts_dict_user"
+      ]
+    },
+    {
+      "failure_nodeid": "test_service_health.py::test_invoice_total_sums_items_with_tax",
+      "target_file": "service_health.py",
+      "target_line": 20,
+      "action": "Resolve the missing symbol by importing, defining, passing, or consistently renaming it near the failing scope.",
+      "rationale": "The code references a name that is unavailable when the failing path executes.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "test_service_health.py::test_invoice_total_sums_items_with_tax"
+      ]
+    }
+  ],
+  "fix_suggestions": [],
+  "rerun": {
+    "command": [
+      "python",
+      "-m",
+      "pytest",
+      "--tb=short",
+      "-q",
+      "test_service_health.py::test_load_config_handles_missing_file",
+      "test_service_health.py::test_display_name_accepts_dict_user",
+      "test_service_health.py::test_invoice_total_sums_items_with_tax"
+    ],
+    "returncode": 1,
+    "duration_seconds": 0.1271896249963902,
+    "passed": false,
+    "timed_out": false,
+    "junit_xml_available": true
+  }
+}

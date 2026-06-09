@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 import xml.etree.ElementTree as ET
+from dataclasses import dataclass
+from pathlib import PurePath
 
 from .models import Failure, TestRun
 
@@ -9,6 +11,14 @@ FAILED_HEADER = re.compile(r"^_{3,}\s+(?P<nodeid>.+?)\s+_{3,}$")
 FILE_LINE = re.compile(r"^(?P<path>[^:\n]+\.py):(?P<line>\d+):\s*(?P<etype>[A-Za-z_][\w.]*)(?::\s*(?P<detail>.*))?$")
 TRACE_FRAME = re.compile(r"^(?P<path>[^:\n]+\.py):(?P<line>\d+):\s+in\s+\w+")
 SHORT_SUMMARY = re.compile(r"^FAILED\s+(?P<nodeid>\S+)\s+-\s+(?P<headline>.+)$")
+
+
+@dataclass(frozen=True)
+class _Frame:
+    path: str
+    line_number: int
+    error_type: str | None = None
+    detail: str | None = None
 
 
 def parse_failures(run: TestRun) -> list[Failure]:
@@ -190,20 +200,14 @@ def _failure_from_block(nodeid: str, block: list[str]) -> Failure:
     line_number = None
     error_type = _error_type_from_headline(headline)
 
-    for line in reversed(block):
-        frame = TRACE_FRAME.match(line.strip())
-        if frame:
-            file_path = frame.group("path")
-            line_number = int(frame.group("line"))
-            break
-        match = FILE_LINE.match(line.strip())
-        if match:
-            file_path = match.group("path")
-            line_number = int(match.group("line"))
-            error_type = match.group("etype")
-            if match.group("detail"):
-                headline = f"{error_type}: {match.group('detail')}"
-            break
+    frame = _best_failure_frame(block)
+    if frame:
+        file_path = frame.path
+        line_number = frame.line_number
+        if frame.error_type:
+            error_type = frame.error_type
+            if frame.detail:
+                headline = f"{error_type}: {frame.detail}"
 
     detail = "\n".join(block[-20:]).strip()
     return Failure(
@@ -223,3 +227,45 @@ def _error_type_from_headline(headline: str) -> str | None:
     if first.endswith("Error") or first.endswith("Exception"):
         return first
     return first if first in {"AssertionError"} else None
+
+
+def _best_failure_frame(block: list[str]) -> _Frame | None:
+    frames = _frames_from_block(block)
+    implementation_frames = [frame for frame in frames if _is_project_path(frame.path) and not _is_test_path(frame.path)]
+    if implementation_frames:
+        return implementation_frames[-1]
+    project_frames = [frame for frame in frames if _is_project_path(frame.path)]
+    if project_frames:
+        return project_frames[-1]
+    return frames[-1] if frames else None
+
+
+def _frames_from_block(block: list[str]) -> list[_Frame]:
+    frames: list[_Frame] = []
+    for line in block:
+        stripped = line.strip()
+        frame = TRACE_FRAME.match(stripped)
+        if frame:
+            frames.append(_Frame(path=frame.group("path"), line_number=int(frame.group("line"))))
+            continue
+        match = FILE_LINE.match(stripped)
+        if match:
+            frames.append(
+                _Frame(
+                    path=match.group("path"),
+                    line_number=int(match.group("line")),
+                    error_type=match.group("etype"),
+                    detail=match.group("detail"),
+                )
+            )
+    return frames
+
+
+def _is_project_path(path: str) -> bool:
+    return not PurePath(path).is_absolute()
+
+
+def _is_test_path(path: str) -> bool:
+    parts = PurePath(path).parts
+    name = PurePath(path).name
+    return name.startswith("test_") or "tests" in parts

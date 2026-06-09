@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -25,6 +26,32 @@ def test_open_source_maintenance_files_exist() -> None:
         Path(".github/ISSUE_TEMPLATE/feature_request.yml"),
     ]:
         assert path.exists(), f"Missing maintenance file: {path}"
+
+
+def test_service_health_demo_artifacts_exist_and_are_documented() -> None:
+    for path in [
+        Path("examples/service_health/service_health.py"),
+        Path("examples/service_health/test_service_health.py"),
+        Path("docs/sample-service-health-report.md"),
+        Path("docs/sample-service-health-report.json"),
+        Path("docs/sample-service-health-fixes.patch"),
+    ]:
+        assert path.exists(), f"Missing service health demo artifact: {path}"
+
+    readme = Path("README.md").read_text(encoding="utf-8")
+    project_brief = Path("docs/project-brief.md").read_text(encoding="utf-8")
+    assert "examples/service_health" in readme
+    assert "sample-service-health-report.md" in readme
+    assert "examples/service_health" in project_brief
+
+
+def test_service_health_sample_report_covers_realistic_failure_categories() -> None:
+    report = json.loads(Path("docs/sample-service-health-report.json").read_text(encoding="utf-8"))
+    categories = {diagnosis["category"] for diagnosis in report["diagnoses"]}
+    targets = {proposal["target_file"] for proposal in report["patch_proposals"]}
+
+    assert {"filesystem-boundary", "object-interface", "symbol-resolution"} <= categories
+    assert targets == {"service_health.py"}
 
 
 def test_public_text_avoids_application_specific_wording() -> None:

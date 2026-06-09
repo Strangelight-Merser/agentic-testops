@@ -42,7 +42,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`.
 - Ships as a reusable GitHub Action for CI report generation.
-- Includes two deliberately failing example projects.
+- Includes three deliberately failing example projects.
 - Includes unit tests and GitHub Actions CI.
 
 ## Demo Artifacts
@@ -53,6 +53,9 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - [Task tracker report](docs/sample-task-tracker-report.md)
 - [Task tracker dry-run fixes](docs/sample-task-tracker-fixes.patch)
 - [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
+- [Service health report](docs/sample-service-health-report.md)
+- [Service health dry-run fixes](docs/sample-service-health-fixes.patch)
+- [Machine-readable service health JSON](docs/sample-service-health-report.json)
 - [GitHub Action usage](docs/github-action.md)
 
 ## Quick Start
@@ -101,6 +104,17 @@ agentic-testops audit examples/task_tracker \
   -o reports/task-tracker-report.md \
   --json-output reports/task-tracker-report.json \
   --fix-output reports/task-tracker-fixes.patch
+```
+
+For a service-style demo that covers filesystem, object interface, and symbol resolution failures:
+
+```bash
+agentic-testops audit examples/service_health \
+  --rerun-failures \
+  --suggest-fixes \
+  -o reports/service-health-report.md \
+  --json-output reports/service-health-report.json \
+  --fix-output reports/service-health-fixes.patch
 ```
 
 ## Example Output
@@ -196,11 +210,14 @@ src/agentic_testops/
   models.py       shared dataclasses
 examples/
   buggy_calculator/
+  service_health/
   task_tracker/
 docs/
   project-brief.md
   sample-buggy-calculator-report.md
   sample-buggy-calculator-fixes.patch
+  sample-service-health-report.md
+  sample-service-health-fixes.patch
   sample-task-tracker-report.md
   sample-task-tracker-fixes.patch
 tests/
