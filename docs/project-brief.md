@@ -22,7 +22,7 @@ The repository includes three intentionally failing Python projects:
 - `examples/task_tracker`: API contract, data shape, and empty-state failures.
 - `examples/service_health`: filesystem boundary, object interface, and symbol resolution failures.
 
-The CLI produces Markdown reports, JSON reports, and optional `.patch` previews. JSON output is designed to be machine-readable so another agent can consume the failure, diagnosis, rerun result, patch proposal objects, and dry-run fix suggestions.
+The CLI produces Markdown reports, JSON reports, and optional `.patch` previews. JSON output is designed to be machine-readable so another agent can consume the failure, diagnosis, rerun result, patch proposal objects, and dry-run fix suggestions. See the [demo walkthrough](demo-walkthrough.md) for the shortest end-to-end example.
 
 ## Evaluation Signals
 

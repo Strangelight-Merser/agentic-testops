@@ -30,6 +30,7 @@ def test_open_source_maintenance_files_exist() -> None:
 
 def test_service_health_demo_artifacts_exist_and_are_documented() -> None:
     for path in [
+        Path("docs/demo-walkthrough.md"),
         Path("examples/service_health/service_health.py"),
         Path("examples/service_health/test_service_health.py"),
         Path("docs/sample-service-health-report.md"),
@@ -40,9 +41,15 @@ def test_service_health_demo_artifacts_exist_and_are_documented() -> None:
 
     readme = Path("README.md").read_text(encoding="utf-8")
     project_brief = Path("docs/project-brief.md").read_text(encoding="utf-8")
+    walkthrough = Path("docs/demo-walkthrough.md").read_text(encoding="utf-8")
+    assert "10-Second Demo" in readme
+    assert "docs/demo-walkthrough.md" in readme
     assert "examples/service_health" in readme
     assert "sample-service-health-report.md" in readme
     assert "examples/service_health" in project_brief
+    for category in ["filesystem-boundary", "object-interface", "symbol-resolution"]:
+        assert category in readme
+        assert category in walkthrough
 
 
 def test_service_health_sample_report_covers_realistic_failure_categories() -> None:

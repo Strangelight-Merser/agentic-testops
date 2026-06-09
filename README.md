@@ -6,6 +6,20 @@ Agentic TestOps is a runnable TestOps assistant for Python repositories. It turn
 
 The project focuses on the "implementation -> verification -> diagnosis -> improvement" loop for Python codebases, using real tools instead of a slide-only demo.
 
+## 10-Second Demo
+
+```bash
+agentic-testops audit examples/service_health --rerun-failures --suggest-fixes
+```
+
+| Raw failure | Structured diagnosis | Patch proposal target |
+| --- | --- | --- |
+| `FileNotFoundError` | `filesystem-boundary` | `service_health.py:9` |
+| `AttributeError` | `object-interface` | `service_health.py:15` |
+| `NameError` | `symbol-resolution` | `service_health.py:20` |
+
+See the [demo walkthrough](docs/demo-walkthrough.md), [Markdown report](docs/sample-service-health-report.md), and [machine-readable JSON](docs/sample-service-health-report.json).
+
 ## Why This Project
 
 Modern AI coding workflows often stop at code generation. Real systems need a feedback loop:
@@ -48,6 +62,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 ## Demo Artifacts
 
 - [Project brief](docs/project-brief.md)
+- [Demo walkthrough](docs/demo-walkthrough.md)
 - [Buggy calculator report](docs/sample-buggy-calculator-report.md)
 - [Buggy calculator dry-run fixes](docs/sample-buggy-calculator-fixes.patch)
 - [Task tracker report](docs/sample-task-tracker-report.md)

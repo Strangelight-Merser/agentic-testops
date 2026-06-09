@@ -13,6 +13,7 @@ All notable changes to Agentic TestOps are documented here.
 - Import-aware API-contract target localization for patch proposals.
 - Diagnosis categories for filesystem boundary, object interface, and symbol resolution failures.
 - Service health example project and sample reports covering the newer diagnosis categories.
+- Demo walkthrough that connects the service health failures to report, JSON, and patch proposal artifacts.
 - Focused reruns for parsed failing pytest node IDs.
 - Timeout handling that returns a structured report instead of crashing.
 - Public sample projects and generated reports.
