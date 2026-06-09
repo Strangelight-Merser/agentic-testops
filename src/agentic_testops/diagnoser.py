@@ -110,6 +110,48 @@ def _diagnose_failure(failure: Failure) -> Diagnosis:
             ],
         )
 
+    if "NameError" in error or "UnboundLocalError" in error:
+        return Diagnosis(
+            failure=failure,
+            category="symbol-resolution",
+            confidence="medium",
+            summary="The implementation referenced a name that is not defined in the active scope.",
+            evidence=_interesting_lines(text),
+            repair_advice=[
+                "Check whether the missing name should be imported, assigned earlier, or passed as an argument.",
+                "Inspect recent renames around the failing line before adding a new global symbol.",
+                "Add a focused regression test that exercises the code path where the name should be available.",
+            ],
+        )
+
+    if "AttributeError" in error:
+        return Diagnosis(
+            failure=failure,
+            category="object-interface",
+            confidence="medium",
+            summary="The code expected an object to expose an attribute or method that is not available at runtime.",
+            evidence=_interesting_lines(text),
+            repair_advice=[
+                "Compare the runtime object type with the interface the code expects at the failing access.",
+                "If the object shape changed, update the adapter or compatibility layer instead of only changing the test.",
+                "Add a regression test for the object variant that lacks the attribute.",
+            ],
+        )
+
+    if "FileNotFoundError" in error or "PermissionError" in error or "IsADirectoryError" in error:
+        return Diagnosis(
+            failure=failure,
+            category="filesystem-boundary",
+            confidence="medium",
+            summary="The code crossed a filesystem boundary without handling a missing, inaccessible, or invalid path.",
+            evidence=_interesting_lines(text),
+            repair_advice=[
+                "Check whether the path should be created, injected as a fixture, or treated as optional input.",
+                "Avoid relying on the process working directory when the project can pass an explicit path.",
+                "Add tests for missing paths, directories, and permission-sensitive behavior where practical.",
+            ],
+        )
+
     if "KeyError" in error or "IndexError" in error:
         return Diagnosis(
             failure=failure,

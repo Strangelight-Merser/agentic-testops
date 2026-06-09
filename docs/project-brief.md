@@ -26,6 +26,7 @@ The CLI produces Markdown reports, JSON reports, and optional `.patch` previews.
 ## Evaluation Signals
 
 - Unit tests validate parser, diagnosis, patch proposal, and report behavior.
+- Diagnosis rules cover assertion regressions, imports, API contracts, data shape, filesystem boundaries, object interfaces, symbol resolution, timeouts, and collection failures.
 - Structured JUnit XML parsing is covered by parser and runner tests.
 - API-contract patch target localization follows explicit test imports before falling back to a project scan.
 - Fix suggestion tests verify that generated diffs do not mutate target files.

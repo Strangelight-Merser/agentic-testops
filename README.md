@@ -31,7 +31,10 @@ Agentic TestOps implements the first working slice of that loop, with determinis
   - dependency/import failure
   - API contract mismatch
   - data shape issue
+  - filesystem boundary issue
   - input validation boundary bug
+  - object interface mismatch
+  - symbol resolution error
   - collection/environment failure
 - Writes a professional Markdown report.
 - Writes machine-readable JSON for later agent orchestration.
