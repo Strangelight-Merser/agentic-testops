@@ -29,6 +29,8 @@ The example is intentionally broken, so the audit exits with code `1` while stil
 - [Machine-readable JSON](sample-service-health-report.json)
 - [Dry-run patch output](sample-service-health-fixes.patch)
 
+The dry-run patch contains three reviewable hunks. Applied to a temporary copy of `examples/service_health`, it turns the intentionally failing example into a passing test suite.
+
 ## Why It Matters
 
 The report preserves evidence from pytest, reruns only the parsed failing node IDs, and keeps repair recommendations reviewable. The base system is deterministic and requires no API key, so it can run in local development or CI before any optional code-fixing layer is added.

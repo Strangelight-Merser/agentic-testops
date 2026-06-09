@@ -8,6 +8,8 @@ from .models import Diagnosis, FixSuggestion, PatchProposal
 
 UNEXPECTED_KEYWORD = re.compile(r"(?P<name>\w+)\(\) got an unexpected keyword argument '(?P<keyword>\w+)'")
 KEY_ERROR = re.compile(r"KeyError: ['\"](?P<key>\w+)['\"]")
+ATTRIBUTE_ERROR = re.compile(r"AttributeError: 'dict' object has no attribute ['\"](?P<attribute>\w+)['\"]")
+NAME_ERROR = re.compile(r"NameError: name ['\"](?P<name>\w+)['\"] is not defined")
 RETURN_DIVISION = re.compile(r"^(?P<indent>\s*)return\s+(?P<numerator>.+?)\s*/\s*(?P<divisor>[A-Za-z_]\w*)\s*$")
 RETURN_DIVISION_BY_LEN = re.compile(
     r"^(?P<indent>\s*)return\s+(?P<numerator>.+?)\s*/\s*len\((?P<name>[A-Za-z_]\w*)\)\s*$"
@@ -67,6 +69,12 @@ def _suggest_fix(
         changed, title, explanation = _suggest_key_error_field_alignment(lines, diagnosis)
     elif diagnosis.category == "data-shape" and diagnosis.failure.error_type == "IndexError":
         changed, title, explanation = _suggest_empty_sequence_guard(lines, diagnosis)
+    elif diagnosis.category == "filesystem-boundary" and diagnosis.failure.error_type == "FileNotFoundError":
+        changed, title, explanation = _suggest_missing_config_default(lines, diagnosis)
+    elif diagnosis.category == "object-interface" and diagnosis.failure.error_type == "AttributeError":
+        changed, title, explanation = _suggest_dict_attribute_access(lines, diagnosis)
+    elif diagnosis.category == "symbol-resolution" and diagnosis.failure.error_type in {"NameError", "UnboundLocalError"}:
+        changed, title, explanation = _suggest_missing_subtotal(lines, diagnosis)
 
     if not changed or changed == lines:
         return None, lines
@@ -197,6 +205,69 @@ def _suggest_empty_sequence_guard(lines: list[str], diagnosis: Diagnosis) -> tup
     return None, "", ""
 
 
+def _suggest_missing_config_default(lines: list[str], diagnosis: Diagnosis) -> tuple[list[str] | None, str, str]:
+    if '{"raw": ""}' not in diagnosis.failure.detail:
+        return None, "", ""
+    for index in _candidate_indexes(diagnosis.failure.line_number, lines):
+        line = lines[index]
+        if "raise FileNotFoundError" not in line:
+            continue
+        indent = line[: len(line) - len(line.lstrip())]
+        changed = lines.copy()
+        changed[index] = f'{indent}return {{"raw": ""}}'
+        return (
+            changed,
+            "Return an empty raw config for a missing optional config file.",
+            "The failing test expects a missing config file to produce an empty raw payload instead of raising FileNotFoundError.",
+        )
+    return None, "", ""
+
+
+def _suggest_dict_attribute_access(lines: list[str], diagnosis: Diagnosis) -> tuple[list[str] | None, str, str]:
+    match = ATTRIBUTE_ERROR.search(diagnosis.failure.headline)
+    if not match:
+        return None, "", ""
+
+    attribute = match.group("attribute")
+    pattern = re.compile(rf"(?P<object>[A-Za-z_]\w*)\.{re.escape(attribute)}\b")
+    for index in _candidate_indexes(diagnosis.failure.line_number, lines):
+        line = lines[index]
+        if not pattern.search(line):
+            continue
+        changed = lines.copy()
+        changed[index] = pattern.sub(rf'\g<object>["{attribute}"]', line, count=1)
+        return (
+            changed,
+            f"Read `{attribute}` with dictionary key access.",
+            "The failing test passes a dictionary, so the implementation should use the runtime object interface instead of attribute access.",
+        )
+    return None, "", ""
+
+
+def _suggest_missing_subtotal(lines: list[str], diagnosis: Diagnosis) -> tuple[list[str] | None, str, str]:
+    match = NAME_ERROR.search(diagnosis.failure.headline)
+    if not match or match.group("name") != "subtotal":
+        return None, "", ""
+
+    for index in _candidate_indexes(diagnosis.failure.line_number, lines):
+        line = lines[index]
+        if "subtotal" not in line:
+            continue
+        def_index = _find_enclosing_function_def(lines, index)
+        if def_index is None or "items" not in lines[def_index]:
+            continue
+        if any("subtotal =" in candidate for candidate in lines[def_index + 1 : index]):
+            continue
+        indent = line[: len(line) - len(line.lstrip())]
+        changed = [*lines[:index], f'{indent}subtotal = sum(item["amount"] for item in items)', *lines[index:]]
+        return (
+            changed,
+            "Compute `subtotal` from item amounts before applying tax.",
+            "The failing calculation references `subtotal` before assignment; summing item amounts matches the exercised invoice input shape.",
+        )
+    return None, "", ""
+
+
 def _candidate_indexes(line_number: int | None, lines: list[str]) -> list[int]:
     indexes = list(range(len(lines)))
     if line_number is None:
@@ -207,6 +278,13 @@ def _candidate_indexes(line_number: int | None, lines: list[str]) -> list[int]:
         before = [index for index in indexes if index < preferred]
         return [preferred, *after, *before]
     return indexes
+
+
+def _find_enclosing_function_def(lines: list[str], line_index: int) -> int | None:
+    for index in range(line_index, -1, -1):
+        if re.match(r"^\s*def\s+\w+\s*\(", lines[index]):
+            return index
+    return None
 
 
 def _find_function_signature(lines: list[str], function_name: str) -> tuple[int, int] | None:

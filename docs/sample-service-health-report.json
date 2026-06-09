@@ -144,7 +144,41 @@
       ]
     }
   ],
-  "fix_suggestions": [],
+  "fix_suggestions": [
+    {
+      "failure_nodeid": "test_service_health.py::test_load_config_handles_missing_file",
+      "target_file": "service_health.py",
+      "title": "Return an empty raw config for a missing optional config file.",
+      "explanation": "The failing test expects a missing config file to produce an empty raw payload instead of raising FileNotFoundError.",
+      "confidence": "medium",
+      "diff": "--- a/service_health.py\n+++ b/service_health.py\n@@ -9 +9 @@\n-        raise FileNotFoundError(f\"Missing config file: {config_path}\")\n+        return {\"raw\": \"\"}",
+      "guardrail_tests": [
+        "test_service_health.py::test_load_config_handles_missing_file"
+      ]
+    },
+    {
+      "failure_nodeid": "test_service_health.py::test_display_name_accepts_dict_user",
+      "target_file": "service_health.py",
+      "title": "Read `name` with dictionary key access.",
+      "explanation": "The failing test passes a dictionary, so the implementation should use the runtime object interface instead of attribute access.",
+      "confidence": "medium",
+      "diff": "--- a/service_health.py\n+++ b/service_health.py\n@@ -15 +15 @@\n-    return user.name.title()\n+    return user[\"name\"].title()",
+      "guardrail_tests": [
+        "test_service_health.py::test_display_name_accepts_dict_user"
+      ]
+    },
+    {
+      "failure_nodeid": "test_service_health.py::test_invoice_total_sums_items_with_tax",
+      "target_file": "service_health.py",
+      "title": "Compute `subtotal` from item amounts before applying tax.",
+      "explanation": "The failing calculation references `subtotal` before assignment; summing item amounts matches the exercised invoice input shape.",
+      "confidence": "medium",
+      "diff": "--- a/service_health.py\n+++ b/service_health.py\n@@ -19,0 +20 @@\n+    subtotal = sum(item[\"amount\"] for item in items)",
+      "guardrail_tests": [
+        "test_service_health.py::test_invoice_total_sums_items_with_tax"
+      ]
+    }
+  ],
   "rerun": {
     "command": [
       "python",

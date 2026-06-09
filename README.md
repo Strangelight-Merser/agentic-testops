@@ -54,7 +54,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Writes machine-readable JSON for later agent orchestration.
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
-- Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`.
+- Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`; the service health demo patch applies cleanly to a temporary copy and makes its tests pass.
 - Ships as a reusable GitHub Action for CI report generation.
 - Includes three deliberately failing example projects.
 - Includes unit tests and GitHub Actions CI.

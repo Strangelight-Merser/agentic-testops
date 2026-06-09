@@ -96,6 +96,54 @@ Repair advice:
 - Guardrail tests:
   - `test_service_health.py::test_invoice_total_sums_items_with_tax`
 
+## Dry-Run Fix Suggestions
+
+These diffs are review previews only. They are not applied automatically.
+
+### 1. `test_service_health.py::test_load_config_handles_missing_file`
+
+- Target: `service_health.py`
+- Confidence: `medium`
+- Summary: Return an empty raw config for a missing optional config file.
+- Explanation: The failing test expects a missing config file to produce an empty raw payload instead of raising FileNotFoundError.
+
+```diff
+--- a/service_health.py
++++ b/service_health.py
+@@ -9 +9 @@
+-        raise FileNotFoundError(f"Missing config file: {config_path}")
++        return {"raw": ""}
+```
+
+### 2. `test_service_health.py::test_display_name_accepts_dict_user`
+
+- Target: `service_health.py`
+- Confidence: `medium`
+- Summary: Read `name` with dictionary key access.
+- Explanation: The failing test passes a dictionary, so the implementation should use the runtime object interface instead of attribute access.
+
+```diff
+--- a/service_health.py
++++ b/service_health.py
+@@ -15 +15 @@
+-    return user.name.title()
++    return user["name"].title()
+```
+
+### 3. `test_service_health.py::test_invoice_total_sums_items_with_tax`
+
+- Target: `service_health.py`
+- Confidence: `medium`
+- Summary: Compute `subtotal` from item amounts before applying tax.
+- Explanation: The failing calculation references `subtotal` before assignment; summing item amounts matches the exercised invoice input shape.
+
+```diff
+--- a/service_health.py
++++ b/service_health.py
+@@ -19,0 +20 @@
++    subtotal = sum(item["amount"] for item in items)
+```
+
 ## Raw Pytest Output
 
 ```text

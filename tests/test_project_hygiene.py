@@ -59,6 +59,8 @@ def test_service_health_sample_report_covers_realistic_failure_categories() -> N
 
     assert {"filesystem-boundary", "object-interface", "symbol-resolution"} <= categories
     assert targets == {"service_health.py"}
+    assert len(report["fix_suggestions"]) == 3
+    assert {suggestion["target_file"] for suggestion in report["fix_suggestions"]} == {"service_health.py"}
 
 
 def test_public_text_avoids_application_specific_wording() -> None:

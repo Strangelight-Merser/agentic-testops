@@ -1,1 +1,16 @@
-# No conservative fix suggestions were generated.
+--- a/service_health.py
++++ b/service_health.py
+@@ -9 +9 @@
+-        raise FileNotFoundError(f"Missing config file: {config_path}")
++        return {"raw": ""}
+
+--- a/service_health.py
++++ b/service_health.py
+@@ -15 +15 @@
+-    return user.name.title()
++    return user["name"].title()
+
+--- a/service_health.py
++++ b/service_health.py
+@@ -19,0 +20 @@
++    subtotal = sum(item["amount"] for item in items)

@@ -1,6 +1,7 @@
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 import pytest
 
@@ -162,6 +163,66 @@ def test_suggest_empty_sequence_guard(tmp_path: Path) -> None:
     assert "return None" in suggestions[0].diff
 
 
+def test_suggest_missing_config_default(tmp_path: Path) -> None:
+    (tmp_path / "service_health.py").write_text(
+        "from pathlib import Path\n\n\n"
+        "def load_config(path):\n"
+        "    config_path = Path(path)\n"
+        "    if not config_path.exists():\n"
+        "        raise FileNotFoundError(f\"Missing config file: {config_path}\")\n"
+        "    return {\"raw\": config_path.read_text()}\n",
+        encoding="utf-8",
+    )
+    diagnosis = _diagnosis(
+        category="filesystem-boundary",
+        error_type="FileNotFoundError",
+        headline="FileNotFoundError: Missing config file: missing.env",
+        file_path="service_health.py",
+        line_number=7,
+        detail='assert load_config("missing.env") == {"raw": ""}',
+    )
+
+    suggestions = suggest_fixes(tmp_path, [diagnosis], [_proposal(diagnosis)])
+
+    assert 'return {"raw": ""}' in suggestions[0].diff
+
+
+def test_suggest_dict_attribute_access(tmp_path: Path) -> None:
+    (tmp_path / "service_health.py").write_text(
+        "def display_name(user):\n    return user.name.title()\n",
+        encoding="utf-8",
+    )
+    diagnosis = _diagnosis(
+        category="object-interface",
+        error_type="AttributeError",
+        headline="AttributeError: 'dict' object has no attribute 'name'",
+        file_path="service_health.py",
+        line_number=2,
+    )
+
+    suggestions = suggest_fixes(tmp_path, [diagnosis], [_proposal(diagnosis)])
+
+    assert 'user["name"].title()' in suggestions[0].diff
+
+
+def test_suggest_missing_subtotal(tmp_path: Path) -> None:
+    (tmp_path / "service_health.py").write_text(
+        "def invoice_total(items):\n    tax_rate = 0.08\n    return subtotal + (subtotal * tax_rate)\n",
+        encoding="utf-8",
+    )
+    diagnosis = _diagnosis(
+        category="symbol-resolution",
+        error_type="NameError",
+        headline="NameError: name 'subtotal' is not defined",
+        file_path="service_health.py",
+        line_number=3,
+    )
+
+    suggestions = suggest_fixes(tmp_path, [diagnosis], [_proposal(diagnosis)])
+
+    assert 'subtotal = sum(item["amount"] for item in items)' in suggestions[0].diff
+
+
 def test_render_fix_suggestions_patch_empty() -> None:
     assert "No conservative fix suggestions" in render_fix_suggestions_patch([])
 
@@ -220,3 +281,92 @@ def test_rendered_patch_applies_multiple_suggestions_for_same_file(tmp_path: Pat
     fixed = target.read_text(encoding="utf-8")
     assert "if b == 0:" in fixed
     assert "if not values:" in fixed
+
+
+def test_rendered_patch_fixes_service_health_example(tmp_path: Path) -> None:
+    if not shutil.which("patch"):
+        pytest.skip("patch command is not available")
+
+    (tmp_path / "service_health.py").write_text(
+        "from pathlib import Path\n\n\n"
+        "def load_config(path):\n"
+        "    config_path = Path(path)\n"
+        "    if not config_path.exists():\n"
+        "        raise FileNotFoundError(f\"Missing config file: {config_path}\")\n"
+        "    text = config_path.read_text(encoding=\"utf-8\")\n"
+        "    return {\"raw\": text}\n\n\n"
+        "def display_name(user):\n"
+        "    return user.name.title()\n\n\n"
+        "def invoice_total(items):\n"
+        "    tax_rate = 0.08\n"
+        "    return subtotal + (subtotal * tax_rate)\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "test_service_health.py").write_text(
+        "from service_health import display_name, invoice_total, load_config\n\n\n"
+        "def test_load_config_handles_missing_file():\n"
+        "    assert load_config(\"missing.env\") == {\"raw\": \"\"}\n\n\n"
+        "def test_display_name_accepts_dict_user():\n"
+        "    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\n\n\n"
+        "def test_invoice_total_sums_items_with_tax():\n"
+        "    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\n",
+        encoding="utf-8",
+    )
+    diagnoses = [
+        _diagnosis(
+            nodeid="test_service_health.py::test_load_config_handles_missing_file",
+            category="filesystem-boundary",
+            error_type="FileNotFoundError",
+            headline="FileNotFoundError: Missing config file: missing.env",
+            file_path="service_health.py",
+            line_number=7,
+            detail='assert load_config("missing.env") == {"raw": ""}',
+        ),
+        _diagnosis(
+            nodeid="test_service_health.py::test_display_name_accepts_dict_user",
+            category="object-interface",
+            error_type="AttributeError",
+            headline="AttributeError: 'dict' object has no attribute 'name'",
+            file_path="service_health.py",
+            line_number=13,
+        ),
+        _diagnosis(
+            nodeid="test_service_health.py::test_invoice_total_sums_items_with_tax",
+            category="symbol-resolution",
+            error_type="NameError",
+            headline="NameError: name 'subtotal' is not defined",
+            file_path="service_health.py",
+            line_number=17,
+        ),
+    ]
+    patch_path = tmp_path / "fixes.patch"
+    patch_path.write_text(
+        render_fix_suggestions_patch(suggest_fixes(tmp_path, diagnoses, [_proposal(diagnosis) for diagnosis in diagnoses])),
+        encoding="utf-8",
+    )
+
+    subprocess.run(["patch", "-p1", "-i", str(patch_path)], cwd=tmp_path, check=True, capture_output=True, text=True)
+    completed = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=tmp_path, check=True, capture_output=True, text=True)
+
+    assert "3 passed" in completed.stdout
+
+
+def test_sample_service_health_patch_applies_to_documented_example(tmp_path: Path) -> None:
+    if not shutil.which("patch"):
+        pytest.skip("patch command is not available")
+
+    demo = tmp_path / "service_health"
+    demo.mkdir()
+    shutil.copy(Path("examples/service_health/service_health.py"), demo / "service_health.py")
+    shutil.copy(Path("examples/service_health/test_service_health.py"), demo / "test_service_health.py")
+
+    subprocess.run(
+        ["patch", "-p1", "-i", str(Path.cwd() / "docs/sample-service-health-fixes.patch")],
+        cwd=demo,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    completed = subprocess.run([sys.executable, "-m", "pytest", "-q"], cwd=demo, check=True, capture_output=True, text=True)
+
+    assert "3 passed" in completed.stdout
