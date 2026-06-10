@@ -86,6 +86,15 @@ The tool is evaluated against historical bugs replayed from real open-source pro
 
 ## Quick Start
 
+Install from PyPI:
+
+```bash
+pip install agentic-testops
+agentic-testops audit path/to/your/project
+```
+
+Or work from a clone:
+
 ```bash
 python -m pip install -e ".[dev]"
 python -m pytest
