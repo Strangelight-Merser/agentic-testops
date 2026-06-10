@@ -1,6 +1,6 @@
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 from agentic_testops import cli
 from agentic_testops.models import FixSuggestion, TestRun

@@ -7,7 +7,7 @@ name = "agentic-testops"
 version = "0.1.0"
 description = "Agentic TestOps for Python projects: automated pytest execution, failure diagnosis, and repair advice."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "Strangelight-Merser" }]
 maintainers = [{ name = "Strangelight-Merser" }]
@@ -19,10 +19,10 @@ classifiers = [
   "Intended Audience :: Developers",
   "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Testing",
   "Topic :: Software Development :: Quality Assurance",
 ]
@@ -34,7 +34,7 @@ Issues = "https://github.com/Strangelight-Merser/agentic-testops/issues"
 Changelog = "https://github.com/Strangelight-Merser/agentic-testops/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "ruff>=0.4", "mypy>=1.10"]
 
 [project.scripts]
 agentic-testops = "agentic_testops.cli:main"
@@ -45,3 +45,20 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "SIM"]
+# Long lines are dominated by human-readable repair-advice strings; splitting
+# them hurts grep-ability more than the length hurts readability.
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+files = ["src"]
+strict = true
+warn_unreachable = true

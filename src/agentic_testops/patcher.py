@@ -6,7 +6,6 @@ from pathlib import Path
 
 from .models import Diagnosis, PatchProposal
 
-
 UNEXPECTED_KEYWORD = re.compile(r"(?P<name>\w+)\(\) got an unexpected keyword argument")
 IGNORED_DIRS = {
     ".git",

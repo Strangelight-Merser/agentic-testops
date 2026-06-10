@@ -1,7 +1,6 @@
 import json
 from pathlib import Path
 
-
 PUBLIC_TEXT_FILES = [
     Path("README.md"),
     Path("CONTRIBUTING.md"),
@@ -83,8 +82,8 @@ def test_project_metadata_exposes_public_repository_details() -> None:
     for expected in [
         'authors = [{ name = "Strangelight-Merser" }]',
         'Homepage = "https://github.com/Strangelight-Merser/agentic-testops"',
-        '"Programming Language :: Python :: 3.9"',
-        '"Programming Language :: Python :: 3.12"',
+        '"Programming Language :: Python :: 3.10"',
+        '"Programming Language :: Python :: 3.13"',
         '"Topic :: Software Development :: Testing"',
     ]:
         assert expected in text
@@ -93,7 +92,7 @@ def test_project_metadata_exposes_public_repository_details() -> None:
 def test_ci_runs_supported_python_matrix() -> None:
     text = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
 
-    assert 'python-version: ["3.9", "3.10", "3.11", "3.12"]' in text
+    assert 'python-version: ["3.10", "3.11", "3.12", "3.13"]' in text
     assert "python-version: ${{ matrix.python-version }}" in text
 
 
