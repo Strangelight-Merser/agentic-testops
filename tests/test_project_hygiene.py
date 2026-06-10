@@ -3,6 +3,7 @@ from pathlib import Path
 
 PUBLIC_TEXT_FILES = [
     Path("README.md"),
+    Path("README.zh-CN.md"),
     Path("CONTRIBUTING.md"),
     Path("CHANGELOG.md"),
     Path("SECURITY.md"),
@@ -12,6 +13,17 @@ PUBLIC_TEXT_FILES = [
     *Path(".github").glob("**/*.yml"),
     *Path(".github").glob("**/*.md"),
 ]
+
+
+def test_chinese_readme_exists_and_is_cross_linked() -> None:
+    english = Path("README.md").read_text(encoding="utf-8")
+    chinese = Path("README.zh-CN.md").read_text(encoding="utf-8")
+
+    assert "README.zh-CN.md" in english
+    assert "README.md" in chinese
+    # The translation must track key sections of the English README.
+    for anchor in ["agentic-testops audit", "--detect-flaky", "real-world-evaluation.md", "MIT"]:
+        assert anchor in chinese, f"Chinese README is missing: {anchor}"
 
 
 def test_open_source_maintenance_files_exist() -> None:

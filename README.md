@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml/badge.svg)](https://github.com/Strangelight-Merser/agentic-testops/actions/workflows/ci.yml)
 
+English | [简体中文](README.zh-CN.md)
+
 Agentic TestOps is a runnable TestOps assistant for Python repositories. It turns a failing test run into a structured engineering report: execute `pytest`, parse failures, classify likely root causes, rerun failing tests, and produce repair-oriented Markdown/JSON output that can be reviewed by a human or passed to a future code-fixing agent.
 
 The project focuses on the "implementation -> verification -> diagnosis -> improvement" loop for Python codebases, using real tools instead of a slide-only demo.
