@@ -2,10 +2,13 @@
 
 All notable changes to Agentic TestOps are documented here.
 
-## Unreleased
+## 0.1.0 - 2026-06-10
 
 ### Added
 
+- Flaky failure detection with `--detect-flaky N`: failing tests are rerun in isolation and classified as `flaky` or `consistent` in the Markdown report, JSON output, and repair guidance.
+- Deterministic shared-state flaky example project (`examples/flaky_pipeline`) with sample report artifacts and a CI smoke test asserting both verdicts.
+- Ruff linting and strict mypy type checking, enforced by a dedicated CI lint job.
 - Reusable GitHub Action with Markdown, JSON, patch artifact, and job summary output.
 - JUnit XML-first pytest failure parsing with text-output fallback.
 - Conservative dry-run fix suggestions that emit reviewable unified diffs.
@@ -25,7 +28,7 @@ All notable changes to Agentic TestOps are documented here.
 - Reports use portable `python -m pytest ...` command rendering instead of machine-specific Python paths.
 - Public reports use a safe display path for absolute project targets.
 - Public project wording is general-purpose and not tied to external application tracks.
-- CI now validates the supported Python version range from 3.9 through 3.12.
+- Supported Python range is now 3.10 through 3.13; 3.9 was dropped after reaching end of life.
 - GitHub workflow examples use current official action major versions for the Node 24 runtime.
 
 ### Notes
