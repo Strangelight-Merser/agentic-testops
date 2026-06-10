@@ -22,7 +22,7 @@ def test_chinese_readme_exists_and_is_cross_linked() -> None:
     assert "README.zh-CN.md" in english
     assert "README.md" in chinese
     # The translation must track key sections of the English README.
-    for anchor in ["agentic-testops audit", "--detect-flaky", "real-world-evaluation.md", "MIT"]:
+    for anchor in ["agentic-testops audit", "--detect-flaky", "--llm-explain", "real-world-evaluation.md", "MIT"]:
         assert anchor in chinese, f"Chinese README is missing: {anchor}"
 
 

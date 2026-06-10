@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 from pathlib import Path
 
 from .diagnoser import diagnose_failures
 from .fixer import render_fix_suggestions_patch, suggest_fixes
 from .flake import detect_flaky_failures
+from .llm import DEFAULT_MODEL, LlmRequestError, MissingApiKeyError, explain_failures
 from .models import AuditReport
 from .parser import parse_failures
 from .patcher import propose_patches
@@ -55,6 +57,19 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Generate conservative dry-run unified diff suggestions without modifying the target project.",
     )
+    audit.add_argument(
+        "--llm-explain",
+        action="store_true",
+        help=(
+            "Add an advisory LLM analysis section using the Anthropic API. "
+            "Requires ANTHROPIC_API_KEY; skipped with a notice when unavailable."
+        ),
+    )
+    audit.add_argument(
+        "--llm-model",
+        default=DEFAULT_MODEL,
+        help=f"Model used with --llm-explain (default: {DEFAULT_MODEL}).",
+    )
     return parser
 
 
@@ -91,6 +106,15 @@ def main(argv: list[str] | None = None) -> int:
             rerun=rerun,
             flake_results=flake_results,
         )
+        if args.llm_explain and failures:
+            try:
+                explanations = explain_failures(report, model=args.llm_model)
+            except MissingApiKeyError:
+                print("LLM analysis skipped: ANTHROPIC_API_KEY is not set.")
+            except LlmRequestError as exc:
+                print(f"LLM analysis skipped: {exc}")
+            else:
+                report = replace(report, llm_explanations=explanations)
         write_markdown_report(report, args.output)
         if args.json_output:
             write_json_report(report, args.json_output)

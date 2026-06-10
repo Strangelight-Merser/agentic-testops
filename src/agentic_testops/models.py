@@ -66,6 +66,13 @@ class FixSuggestion:
 
 
 @dataclass(frozen=True)
+class LlmExplanation:
+    failure_nodeid: str
+    explanation: str
+    model: str
+
+
+@dataclass(frozen=True)
 class FlakeResult:
     nodeid: str
     attempts: int
@@ -89,6 +96,7 @@ class AuditReport:
     fix_suggestions: list[FixSuggestion] = field(default_factory=list)
     rerun: TestRun | None = None
     flake_results: list[FlakeResult] = field(default_factory=list)
+    llm_explanations: list[LlmExplanation] = field(default_factory=list)
 
     @property
     def display_project_path(self) -> str:
@@ -127,6 +135,7 @@ class AuditReport:
                 for result in self.flake_results
             ],
             "fix_suggestions": [suggestion.__dict__ for suggestion in self.fix_suggestions],
+            "llm_explanations": [explanation.__dict__ for explanation in self.llm_explanations],
             "rerun": {
                 "command": _portable_command(self.rerun.command),
                 "returncode": self.rerun.returncode,

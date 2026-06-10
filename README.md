@@ -58,6 +58,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`; the service health demo patch applies cleanly to a temporary copy and makes its tests pass.
+- Optional LLM analysis layer with `--llm-explain`: the structured failure evidence is sent to the Anthropic API for advisory root-cause explanations rendered alongside the deterministic diagnosis. Requires `ANTHROPIC_API_KEY`; without it the audit runs unchanged and prints a skip notice. No extra dependencies.
 - Ships as a reusable GitHub Action for CI report generation.
 - Includes four deliberately failing example projects, including a deterministic shared-state flake.
 - Includes unit tests, ruff linting, strict mypy type checking, and GitHub Actions CI.
@@ -153,6 +154,15 @@ agentic-testops audit examples/flaky_pipeline \
 
 The report's Flakiness Check table classifies `test_fetch_rates_includes_eur` as `flaky` (it depends on a cache warm-up side effect) and `test_convert_applies_rate_exactly` as `consistent` (a real off-by-one bug). See the [sample flaky pipeline report](docs/sample-flaky-pipeline-report.md).
 
+To add an advisory LLM analysis on top of the deterministic diagnosis:
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+agentic-testops audit examples/buggy_calculator --llm-explain
+```
+
+The LLM section is clearly marked as advisory, never replaces the deterministic output, and the audit degrades gracefully (with a printed notice) when the key is missing or the request fails — so the same command stays CI-safe.
+
 ## Example Output
 
 ````markdown
@@ -243,6 +253,7 @@ src/agentic_testops/
   patcher.py      structured patch proposal planner
   fixer.py        conservative dry-run unified diff suggestions
   flake.py        flaky-failure detection through repeated reruns
+  llm.py          optional advisory LLM analysis (Anthropic API, stdlib HTTP)
   reporter.py     Markdown and JSON report generation
   models.py       shared dataclasses
 examples/
@@ -286,7 +297,7 @@ action.yml
 ## Roadmap
 
 - Safer AST-backed edit planning for more Python syntax shapes and call patterns.
-- Optional OpenAI-powered explanation layer over deterministic diagnostics.
+- LLM-assisted patch generation building on the explanation layer.
 - GitHub Checks integration that comments summaries on pull requests.
 - Historical project memory for repeated failures and flaky-test signals.
 - Multi-agent roles: runner, triager, patch planner, verifier.
