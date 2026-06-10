@@ -4,6 +4,8 @@
 
 [English](README.md) | 简体中文
 
+![Agentic TestOps 将失败的 pytest 运行转化为结构化修复报告](docs/assets/demo.gif)
+
 Agentic TestOps 是一个可直接运行的 Python 仓库 TestOps 助手。它把一次失败的测试运行转化为结构化的工程报告：执行 `pytest`、解析失败用例、归类可能的根因、重跑失败测试，并产出面向修复的 Markdown/JSON 输出，既可供人工评审，也可传递给后续的代码修复 Agent。
 
 项目聚焦于 Python 代码库的"实现 -> 验证 -> 诊断 -> 改进"闭环，用真实工具落地，而不是只停留在幻灯片演示。
