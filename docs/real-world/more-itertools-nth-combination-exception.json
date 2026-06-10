@@ -1,0 +1,108 @@
+{
+  "project_path": "more-itertools-nth-combination-exception",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "returncode": 1,
+  "duration_seconds": 11.89776583899993,
+  "passed": false,
+  "timed_out": false,
+  "junit_xml_available": true,
+  "failures": [
+    {
+      "nodeid": "tests/test_more.py::test_basic",
+      "headline": "ValueError",
+      "file_path": "more_itertools/more.py",
+      "line_number": 4277,
+      "error_type": "ValueError",
+      "detail": "tests/test_more.py:4883: in test_basic\n    mi.nth_combination_with_replacement('abcde', 7, 320),\nmore_itertools/more.py:4277: in nth_combination_with_replacement\n    raise ValueError\nE   ValueError"
+    },
+    {
+      "nodeid": "tests/test_more.py::test_invalid_index",
+      "headline": "ValueError",
+      "file_path": "more_itertools/more.py",
+      "line_number": 4277,
+      "error_type": "ValueError",
+      "detail": "tests/test_more.py:4900: in test_invalid_index\n    mi.nth_combination_with_replacement('abcde', 7, 400)\nmore_itertools/more.py:4277: in nth_combination_with_replacement\n    raise ValueError\nE   ValueError"
+    }
+  ],
+  "diagnoses": [
+    {
+      "failure": {
+        "nodeid": "tests/test_more.py::test_basic",
+        "headline": "ValueError",
+        "file_path": "more_itertools/more.py",
+        "line_number": 4277,
+        "error_type": "ValueError",
+        "detail": "tests/test_more.py:4883: in test_basic\n    mi.nth_combination_with_replacement('abcde', 7, 320),\nmore_itertools/more.py:4277: in nth_combination_with_replacement\n    raise ValueError\nE   ValueError"
+      },
+      "category": "input-validation",
+      "confidence": "medium",
+      "summary": "The implementation likely misses validation for an invalid or boundary input.",
+      "evidence": [
+        "tests/test_more.py:4883: in test_basic",
+        "more_itertools/more.py:4277: in nth_combination_with_replacement",
+        "E   ValueError"
+      ],
+      "repair_advice": [
+        "Define the intended behavior for the boundary input: reject, clamp, or return a neutral value.",
+        "Guard the operation close to the source of the invalid value.",
+        "Document the behavior in a test so future agents preserve it."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "tests/test_more.py::test_invalid_index",
+        "headline": "ValueError",
+        "file_path": "more_itertools/more.py",
+        "line_number": 4277,
+        "error_type": "ValueError",
+        "detail": "tests/test_more.py:4900: in test_invalid_index\n    mi.nth_combination_with_replacement('abcde', 7, 400)\nmore_itertools/more.py:4277: in nth_combination_with_replacement\n    raise ValueError\nE   ValueError"
+      },
+      "category": "input-validation",
+      "confidence": "medium",
+      "summary": "The implementation likely misses validation for an invalid or boundary input.",
+      "evidence": [
+        "tests/test_more.py:4900: in test_invalid_index",
+        "more_itertools/more.py:4277: in nth_combination_with_replacement",
+        "E   ValueError"
+      ],
+      "repair_advice": [
+        "Define the intended behavior for the boundary input: reject, clamp, or return a neutral value.",
+        "Guard the operation close to the source of the invalid value.",
+        "Document the behavior in a test so future agents preserve it."
+      ]
+    }
+  ],
+  "patch_proposals": [
+    {
+      "failure_nodeid": "tests/test_more.py::test_basic",
+      "target_file": "more_itertools/more.py",
+      "target_line": 4277,
+      "action": "Add explicit validation for the failing boundary input before the unsafe operation.",
+      "rationale": "The traceback shows an invalid or boundary value reaching implementation code without a contract check.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "tests/test_more.py::test_basic"
+      ]
+    },
+    {
+      "failure_nodeid": "tests/test_more.py::test_invalid_index",
+      "target_file": "more_itertools/more.py",
+      "target_line": 4277,
+      "action": "Add explicit validation for the failing boundary input before the unsafe operation.",
+      "rationale": "The traceback shows an invalid or boundary value reaching implementation code without a contract check.",
+      "confidence": "medium",
+      "guardrail_tests": [
+        "tests/test_more.py::test_invalid_index"
+      ]
+    }
+  ],
+  "flake_results": [],
+  "fix_suggestions": [],
+  "rerun": null
+}

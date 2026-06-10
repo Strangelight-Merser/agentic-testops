@@ -60,8 +60,13 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Includes four deliberately failing example projects, including a deterministic shared-state flake.
 - Includes unit tests, ruff linting, strict mypy type checking, and GitHub Actions CI.
 
+## Real-World Evaluation
+
+The tool is evaluated against historical bugs replayed from real open-source projects (more-itertools, tabulate, boltons) using a SWE-bench style "revert source, keep tests" procedure, with results compared against the files and lines the upstream fixes actually changed. The findings — including where the tool fails — are documented in [docs/real-world-evaluation.md](docs/real-world-evaluation.md) and reproducible via `scripts/evaluate_real_world.py`.
+
 ## Demo Artifacts
 
+- [Real-world evaluation](docs/real-world-evaluation.md)
 - [Project brief](docs/project-brief.md)
 - [Demo walkthrough](docs/demo-walkthrough.md)
 - [Buggy calculator report](docs/sample-buggy-calculator-report.md)
@@ -265,6 +270,7 @@ action.yml
 - Focused reruns, timeout reports, and portable command rendering are covered by tests.
 - Public examples demonstrate boundary validation, API contract, data shape, empty-state, and shared-state flaky failures.
 - Flakiness detection separates unstable failures from reproducible ones before repair planning.
+- Real-world evaluation replays historical bugs from more-itertools, tabulate, and boltons and documents both hits and misses against upstream fix ground truth.
 - Maintenance files are provided for issues, pull requests, contribution workflow, release checks, and security reporting.
 
 ## Maintenance

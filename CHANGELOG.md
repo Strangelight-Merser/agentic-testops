@@ -2,6 +2,13 @@
 
 All notable changes to Agentic TestOps are documented here.
 
+## Unreleased
+
+### Added
+
+- Real-world evaluation harness (`scripts/evaluate_real_world.py`) that replays historical upstream bug fixes (more-itertools, tabulate, boltons) with a revert-source-keep-tests procedure.
+- Evaluation report (`docs/real-world-evaluation.md`) documenting parsing robustness, localization hits against upstream fix ground truth, and the assertion-localization blind spot.
+
 ## 0.1.0 - 2026-06-10
 
 ### Added
