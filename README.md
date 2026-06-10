@@ -38,6 +38,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Runs `python -m pytest --tb=short -q` in the target project.
 - Parses pytest failures from JUnit XML first, with text-output parsing as a fallback.
 - Optionally reruns only parsed failing node IDs with `--rerun-failures`.
+- Detects flaky failures with `--detect-flaky N`: each failing test is rerun N extra times and classified as `flaky` (unstable) or `consistent` (reproducible), so patch automation can skip unstable targets.
 - Converts pytest timeouts into structured reports instead of crashing.
 - Preserves user-supplied pytest arguments during focused reruns.
 - Diagnoses common Python failure classes:
@@ -56,8 +57,8 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`; the service health demo patch applies cleanly to a temporary copy and makes its tests pass.
 - Ships as a reusable GitHub Action for CI report generation.
-- Includes three deliberately failing example projects.
-- Includes unit tests and GitHub Actions CI.
+- Includes four deliberately failing example projects, including a deterministic shared-state flake.
+- Includes unit tests, ruff linting, strict mypy type checking, and GitHub Actions CI.
 
 ## Demo Artifacts
 
@@ -68,6 +69,8 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - [Task tracker report](docs/sample-task-tracker-report.md)
 - [Task tracker dry-run fixes](docs/sample-task-tracker-fixes.patch)
 - [Machine-readable task tracker JSON](docs/sample-task-tracker-report.json)
+- [Flaky pipeline report](docs/sample-flaky-pipeline-report.md)
+- [Machine-readable flaky pipeline JSON](docs/sample-flaky-pipeline-report.json)
 - [Service health report](docs/sample-service-health-report.md)
 - [Service health dry-run fixes](docs/sample-service-health-fixes.patch)
 - [Machine-readable service health JSON](docs/sample-service-health-report.json)
@@ -131,6 +134,17 @@ agentic-testops audit examples/service_health \
   --json-output reports/service-health-report.json \
   --fix-output reports/service-health-fixes.patch
 ```
+
+For a flakiness demo that separates an unstable shared-state failure from a reproducible bug:
+
+```bash
+agentic-testops audit examples/flaky_pipeline \
+  --detect-flaky 2 \
+  -o reports/flaky-pipeline-report.md \
+  --json-output reports/flaky-pipeline-report.json
+```
+
+The report's Flakiness Check table classifies `test_fetch_rates_includes_eur` as `flaky` (it depends on a cache warm-up side effect) and `test_convert_applies_rate_exactly` as `consistent` (a real off-by-one bug). See the [sample flaky pipeline report](docs/sample-flaky-pipeline-report.md).
 
 ## Example Output
 
@@ -221,10 +235,12 @@ src/agentic_testops/
   diagnoser.py    failure classification and repair advice
   patcher.py      structured patch proposal planner
   fixer.py        conservative dry-run unified diff suggestions
+  flake.py        flaky-failure detection through repeated reruns
   reporter.py     Markdown and JSON report generation
   models.py       shared dataclasses
 examples/
   buggy_calculator/
+  flaky_pipeline/
   service_health/
   task_tracker/
 docs/
@@ -247,7 +263,8 @@ action.yml
 - Markdown, JSON, and dry-run patch artifacts are generated from real pytest runs.
 - JUnit XML parsing is preferred, with conservative text parsing as a fallback.
 - Focused reruns, timeout reports, and portable command rendering are covered by tests.
-- Public examples demonstrate boundary validation, API contract, data shape, and empty-state failures.
+- Public examples demonstrate boundary validation, API contract, data shape, empty-state, and shared-state flaky failures.
+- Flakiness detection separates unstable failures from reproducible ones before repair planning.
 - Maintenance files are provided for issues, pull requests, contribution workflow, release checks, and security reporting.
 
 ## Maintenance
@@ -265,7 +282,6 @@ action.yml
 - GitHub Checks integration that comments summaries on pull requests.
 - Historical project memory for repeated failures and flaky-test signals.
 - Multi-agent roles: runner, triager, patch planner, verifier.
-- Flaky-test detection through repeated runs.
 - Coverage-guided test gap analysis.
 
 ## Limitations

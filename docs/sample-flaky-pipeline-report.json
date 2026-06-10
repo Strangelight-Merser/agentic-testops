@@ -1,0 +1,122 @@
+{
+  "project_path": "examples/flaky_pipeline",
+  "command": [
+    "python",
+    "-m",
+    "pytest",
+    "--tb=short",
+    "-q"
+  ],
+  "returncode": 1,
+  "duration_seconds": 0.0977624580000338,
+  "passed": false,
+  "timed_out": false,
+  "junit_xml_available": true,
+  "failures": [
+    {
+      "nodeid": "test_pipeline.py::test_fetch_rates_includes_eur",
+      "headline": "AssertionError: assert 'EUR' in {'USD': 1.0}",
+      "file_path": "test_pipeline.py",
+      "line_number": 8,
+      "error_type": "AssertionError",
+      "detail": "test_pipeline.py:8: in test_fetch_rates_includes_eur\n    assert \"EUR\" in rates\nE   AssertionError: assert 'EUR' in {'USD': 1.0}"
+    },
+    {
+      "nodeid": "test_pipeline.py::test_convert_applies_rate_exactly",
+      "headline": "assert 21.0 == 20.0\n +  where 21.0 = convert(10.0, 2.0)",
+      "file_path": "test_pipeline.py",
+      "line_number": 12,
+      "error_type": null,
+      "detail": "test_pipeline.py:12: in test_convert_applies_rate_exactly\n    assert convert(10.0, 2.0) == 20.0\nE   assert 21.0 == 20.0\nE    +  where 21.0 = convert(10.0, 2.0)"
+    }
+  ],
+  "diagnoses": [
+    {
+      "failure": {
+        "nodeid": "test_pipeline.py::test_fetch_rates_includes_eur",
+        "headline": "AssertionError: assert 'EUR' in {'USD': 1.0}",
+        "file_path": "test_pipeline.py",
+        "line_number": 8,
+        "error_type": "AssertionError",
+        "detail": "test_pipeline.py:8: in test_fetch_rates_includes_eur\n    assert \"EUR\" in rates\nE   AssertionError: assert 'EUR' in {'USD': 1.0}"
+      },
+      "category": "behavioral-regression",
+      "confidence": "medium",
+      "summary": "A test assertion failed, so the implementation likely violates the expected behavior.",
+      "evidence": [
+        "test_pipeline.py:8: in test_fetch_rates_includes_eur",
+        "E   AssertionError: assert 'EUR' in {'USD': 1.0}"
+      ],
+      "repair_advice": [
+        "Compare expected and actual values in the failing assertion before changing the test.",
+        "Add or update a narrow unit test around the boundary condition that produced the mismatch.",
+        "Patch the implementation path exercised by the failing nodeid, then rerun only this test first."
+      ]
+    },
+    {
+      "failure": {
+        "nodeid": "test_pipeline.py::test_convert_applies_rate_exactly",
+        "headline": "assert 21.0 == 20.0\n +  where 21.0 = convert(10.0, 2.0)",
+        "file_path": "test_pipeline.py",
+        "line_number": 12,
+        "error_type": null,
+        "detail": "test_pipeline.py:12: in test_convert_applies_rate_exactly\n    assert convert(10.0, 2.0) == 20.0\nE   assert 21.0 == 20.0\nE    +  where 21.0 = convert(10.0, 2.0)"
+      },
+      "category": "behavioral-regression",
+      "confidence": "medium",
+      "summary": "A test assertion failed, so the implementation likely violates the expected behavior.",
+      "evidence": [
+        "test_pipeline.py:12: in test_convert_applies_rate_exactly",
+        "E   assert 21.0 == 20.0",
+        "E    +  where 21.0 = convert(10.0, 2.0)"
+      ],
+      "repair_advice": [
+        "Compare expected and actual values in the failing assertion before changing the test.",
+        "Add or update a narrow unit test around the boundary condition that produced the mismatch.",
+        "Patch the implementation path exercised by the failing nodeid, then rerun only this test first."
+      ]
+    }
+  ],
+  "patch_proposals": [
+    {
+      "failure_nodeid": "test_pipeline.py::test_fetch_rates_includes_eur",
+      "target_file": "test_pipeline.py",
+      "target_line": 8,
+      "action": "Inspect the nearest project frame and make the smallest code change that satisfies the failing test contract.",
+      "rationale": "No higher-confidence domain rule matched this failure, so the proposal stays conservative.",
+      "confidence": "low",
+      "guardrail_tests": [
+        "test_pipeline.py::test_fetch_rates_includes_eur"
+      ]
+    },
+    {
+      "failure_nodeid": "test_pipeline.py::test_convert_applies_rate_exactly",
+      "target_file": "test_pipeline.py",
+      "target_line": 12,
+      "action": "Inspect the nearest project frame and make the smallest code change that satisfies the failing test contract.",
+      "rationale": "No higher-confidence domain rule matched this failure, so the proposal stays conservative.",
+      "confidence": "low",
+      "guardrail_tests": [
+        "test_pipeline.py::test_convert_applies_rate_exactly"
+      ]
+    }
+  ],
+  "flake_results": [
+    {
+      "nodeid": "test_pipeline.py::test_fetch_rates_includes_eur",
+      "attempts": 2,
+      "failed_attempts": 0,
+      "pass_rate": 1.0,
+      "verdict": "flaky"
+    },
+    {
+      "nodeid": "test_pipeline.py::test_convert_applies_rate_exactly",
+      "attempts": 2,
+      "failed_attempts": 2,
+      "pass_rate": 0.0,
+      "verdict": "consistent"
+    }
+  ],
+  "fix_suggestions": [],
+  "rerun": null
+}

@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from .models import AuditReport
+from .models import AuditReport, TestRun
 
 
 def write_markdown_report(report: AuditReport, output_path: Path) -> None:
@@ -47,6 +47,32 @@ def render_markdown(report: AuditReport) -> str:
                 "",
             ]
         )
+
+    if report.flake_results:
+        lines.extend(
+            [
+                "## Flakiness Check",
+                "",
+                "Failing tests were rerun in isolation to separate unstable failures from reproducible ones.",
+                "",
+                "| Test | Reruns | Failed | Verdict |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for result in report.flake_results:
+            lines.append(
+                f"| `{result.nodeid}` | {result.attempts} | {result.failed_attempts} | `{result.verdict}` |"
+            )
+        flaky = [result for result in report.flake_results if result.verdict == "flaky"]
+        lines.append("")
+        if flaky:
+            lines.extend(
+                [
+                    "Flaky failures usually indicate test order, timing, or shared-state issues. "
+                    "Treat their patch proposals below with extra caution.",
+                    "",
+                ]
+            )
 
     lines.extend(["## Diagnosis", ""])
     for index, diagnosis in enumerate(report.diagnoses, start=1):
@@ -142,7 +168,7 @@ def _trim(text: str, limit: int = 12000) -> str:
     return text[:limit] + "\n... output truncated ..."
 
 
-def _status(run) -> str:
+def _status(run: TestRun) -> str:
     if run.timed_out:
         return "TIMEOUT"
     return "PASS" if run.passed else "FAIL"

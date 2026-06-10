@@ -66,6 +66,20 @@ class FixSuggestion:
 
 
 @dataclass(frozen=True)
+class FlakeResult:
+    nodeid: str
+    attempts: int
+    failed_attempts: int
+    verdict: str
+
+    @property
+    def pass_rate(self) -> float:
+        if self.attempts == 0:
+            return 0.0
+        return (self.attempts - self.failed_attempts) / self.attempts
+
+
+@dataclass(frozen=True)
 class AuditReport:
     project_path: Path
     run: TestRun
@@ -74,6 +88,7 @@ class AuditReport:
     patch_proposals: list[PatchProposal] = field(default_factory=list)
     fix_suggestions: list[FixSuggestion] = field(default_factory=list)
     rerun: TestRun | None = None
+    flake_results: list[FlakeResult] = field(default_factory=list)
 
     @property
     def display_project_path(self) -> str:
@@ -101,6 +116,16 @@ class AuditReport:
                 for diagnosis in self.diagnoses
             ],
             "patch_proposals": [proposal.__dict__ for proposal in self.patch_proposals],
+            "flake_results": [
+                {
+                    "nodeid": result.nodeid,
+                    "attempts": result.attempts,
+                    "failed_attempts": result.failed_attempts,
+                    "pass_rate": result.pass_rate,
+                    "verdict": result.verdict,
+                }
+                for result in self.flake_results
+            ],
             "fix_suggestions": [suggestion.__dict__ for suggestion in self.fix_suggestions],
             "rerun": {
                 "command": _portable_command(self.rerun.command),

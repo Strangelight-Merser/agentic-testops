@@ -5,12 +5,32 @@ on:
   pull_request:
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install package
+        run: python -m pip install -e ".[dev]"
+
+      - name: Ruff lint
+        run: ruff check src tests
+
+      - name: Mypy type check
+        run: mypy
+
   test:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
@@ -64,6 +84,28 @@ jobs:
           report = json.loads(Path("reports/service-health-report.json").read_text(encoding="utf-8"))
           categories = {diagnosis["category"] for diagnosis in report["diagnoses"]}
           assert {"filesystem-boundary", "object-interface", "symbol-resolution"} <= categories
+          PY
+
+      - name: Smoke test flaky failure detection
+        run: |
+          rm -f examples/flaky_pipeline/.cache_warm
+          set +e
+          agentic-testops audit examples/flaky_pipeline \
+            --detect-flaky 2 \
+            -o reports/flaky-pipeline-report.md \
+            --json-output reports/flaky-pipeline-report.json
+          rc=$?
+          set -e
+          rm -f examples/flaky_pipeline/.cache_warm
+          test "$rc" -eq 1
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          report = json.loads(Path("reports/flaky-pipeline-report.json").read_text(encoding="utf-8"))
+          verdicts = {item["nodeid"]: item["verdict"] for item in report["flake_results"]}
+          assert verdicts["test_pipeline.py::test_fetch_rates_includes_eur"] == "flaky"
+          assert verdicts["test_pipeline.py::test_convert_applies_rate_exactly"] == "consistent"
           PY
 
       - name: Smoke test composite action

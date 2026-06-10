@@ -5,6 +5,7 @@ from pathlib import Path
 
 from .diagnoser import diagnose_failures
 from .fixer import render_fix_suggestions_patch, suggest_fixes
+from .flake import detect_flaky_failures
 from .models import AuditReport
 from .parser import parse_failures
 from .patcher import propose_patches
@@ -40,6 +41,16 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     audit.add_argument(
+        "--detect-flaky",
+        type=int,
+        default=0,
+        metavar="N",
+        help=(
+            "Rerun each failing test N extra times to separate flaky failures "
+            "from consistently reproducible ones. 0 disables detection."
+        ),
+    )
+    audit.add_argument(
         "--suggest-fixes",
         action="store_true",
         help="Generate conservative dry-run unified diff suggestions without modifying the target project.",
@@ -61,6 +72,15 @@ def main(argv: list[str] | None = None) -> int:
         if args.rerun_failures and failures:
             rerun_args = [*extra_args, *[failure.nodeid for failure in failures]]
             rerun = run_pytest(args.project, extra_args=rerun_args, timeout=args.timeout)
+        flake_results = []
+        if args.detect_flaky > 0 and failures:
+            flake_results = detect_flaky_failures(
+                args.project,
+                failures,
+                attempts=args.detect_flaky,
+                extra_args=extra_args,
+                timeout=args.timeout,
+            )
         report = AuditReport(
             project_path=args.project,
             run=run,
@@ -69,6 +89,7 @@ def main(argv: list[str] | None = None) -> int:
             patch_proposals=patch_proposals,
             fix_suggestions=fix_suggestions,
             rerun=rerun,
+            flake_results=flake_results,
         )
         write_markdown_report(report, args.output)
         if args.json_output:
