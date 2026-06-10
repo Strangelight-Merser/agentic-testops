@@ -7,7 +7,7 @@ from pathlib import Path
 from .diagnoser import diagnose_failures
 from .fixer import render_fix_suggestions_patch, suggest_fixes
 from .flake import detect_flaky_failures
-from .llm import DEFAULT_MODEL, LlmRequestError, MissingApiKeyError, explain_failures
+from .llm import PROVIDER_AUTO, PROVIDERS, LlmRequestError, MissingApiKeyError, explain_failures
 from .models import AuditReport
 from .parser import parse_failures
 from .patcher import propose_patches
@@ -61,14 +61,32 @@ def build_parser() -> argparse.ArgumentParser:
         "--llm-explain",
         action="store_true",
         help=(
-            "Add an advisory LLM analysis section using the Anthropic API. "
-            "Requires ANTHROPIC_API_KEY; skipped with a notice when unavailable."
+            "Add an advisory LLM analysis section. Works with the Anthropic API or any "
+            "OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Zhipu, Ollama, vLLM, ...). "
+            "Skipped with a notice when no API key is available."
+        ),
+    )
+    audit.add_argument(
+        "--llm-provider",
+        choices=PROVIDERS,
+        default=PROVIDER_AUTO,
+        help=(
+            "LLM API protocol. 'auto' picks from available ANTHROPIC_API_KEY / OPENAI_API_KEY "
+            "environment variables; custom --llm-base-url endpoints default to the OpenAI protocol."
         ),
     )
     audit.add_argument(
         "--llm-model",
-        default=DEFAULT_MODEL,
-        help=f"Model used with --llm-explain (default: {DEFAULT_MODEL}).",
+        default=None,
+        help="Model used with --llm-explain (defaults to a small model of the selected provider).",
+    )
+    audit.add_argument(
+        "--llm-base-url",
+        default=None,
+        help=(
+            "Custom API base URL, e.g. https://api.deepseek.com for DeepSeek or "
+            "http://localhost:11434/v1 for Ollama."
+        ),
     )
     return parser
 
@@ -108,9 +126,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         if args.llm_explain and failures:
             try:
-                explanations = explain_failures(report, model=args.llm_model)
-            except MissingApiKeyError:
-                print("LLM analysis skipped: ANTHROPIC_API_KEY is not set.")
+                explanations = explain_failures(
+                    report,
+                    provider=args.llm_provider,
+                    model=args.llm_model,
+                    base_url=args.llm_base_url,
+                )
+            except MissingApiKeyError as exc:
+                print(f"LLM analysis skipped: {exc}.")
             except LlmRequestError as exc:
                 print(f"LLM analysis skipped: {exc}")
             else:

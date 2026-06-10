@@ -58,7 +58,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`; the service health demo patch applies cleanly to a temporary copy and makes its tests pass.
-- Optional LLM analysis layer with `--llm-explain`: the structured failure evidence is sent to the Anthropic API for advisory root-cause explanations rendered alongside the deterministic diagnosis. Requires `ANTHROPIC_API_KEY`; without it the audit runs unchanged and prints a skip notice. No extra dependencies.
+- Optional LLM analysis layer with `--llm-explain`: the structured failure evidence is sent to an LLM for advisory root-cause explanations rendered alongside the deterministic diagnosis. Works with the Anthropic API and any OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Zhipu, Moonshot, local Ollama/vLLM) via `--llm-provider` and `--llm-base-url`. Without an API key the audit runs unchanged and prints a skip notice. No extra dependencies.
 - Ships as a reusable GitHub Action for CI report generation.
 - Includes four deliberately failing example projects, including a deterministic shared-state flake.
 - Includes unit tests, ruff linting, strict mypy type checking, and GitHub Actions CI.
@@ -154,14 +154,28 @@ agentic-testops audit examples/flaky_pipeline \
 
 The report's Flakiness Check table classifies `test_fetch_rates_includes_eur` as `flaky` (it depends on a cache warm-up side effect) and `test_convert_applies_rate_exactly` as `consistent` (a real off-by-one bug). See the [sample flaky pipeline report](docs/sample-flaky-pipeline-report.md).
 
-To add an advisory LLM analysis on top of the deterministic diagnosis:
+To add an advisory LLM analysis on top of the deterministic diagnosis, use any provider you like:
 
 ```bash
+# Anthropic
 export ANTHROPIC_API_KEY=sk-ant-...
 agentic-testops audit examples/buggy_calculator --llm-explain
+
+# OpenAI
+export OPENAI_API_KEY=sk-...
+agentic-testops audit examples/buggy_calculator --llm-explain
+
+# Any OpenAI-compatible endpoint (DeepSeek, Qwen, Zhipu, Moonshot, ...)
+export OPENAI_API_KEY=sk-...
+agentic-testops audit examples/buggy_calculator --llm-explain \
+  --llm-base-url https://api.deepseek.com --llm-model deepseek-chat
+
+# Local models (Ollama / vLLM), no API key required
+agentic-testops audit examples/buggy_calculator --llm-explain \
+  --llm-base-url http://localhost:11434/v1 --llm-model qwen3
 ```
 
-The LLM section is clearly marked as advisory, never replaces the deterministic output, and the audit degrades gracefully (with a printed notice) when the key is missing or the request fails — so the same command stays CI-safe.
+`--llm-provider auto` (the default) picks the protocol from whichever API key is set. The LLM section is clearly marked as advisory, never replaces the deterministic output, and the audit degrades gracefully (with a printed notice) when the key is missing or the request fails — so the same command stays CI-safe.
 
 ## Example Output
 
@@ -253,7 +267,7 @@ src/agentic_testops/
   patcher.py      structured patch proposal planner
   fixer.py        conservative dry-run unified diff suggestions
   flake.py        flaky-failure detection through repeated reruns
-  llm.py          optional advisory LLM analysis (Anthropic API, stdlib HTTP)
+  llm.py          optional advisory LLM analysis (Anthropic + OpenAI-compatible APIs, stdlib HTTP)
   reporter.py     Markdown and JSON report generation
   models.py       shared dataclasses
 examples/

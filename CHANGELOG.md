@@ -9,7 +9,7 @@ All notable changes to Agentic TestOps are documented here.
 - Real-world evaluation harness (`scripts/evaluate_real_world.py`) that replays historical upstream bug fixes (more-itertools, tabulate, boltons) with a revert-source-keep-tests procedure.
 - Evaluation report (`docs/real-world-evaluation.md`) documenting parsing robustness, localization hits against upstream fix ground truth, and the assertion-localization blind spot.
 - Simplified Chinese README (`README.zh-CN.md`) with cross-links between both languages, kept in sync by a hygiene test.
-- Optional LLM analysis layer (`--llm-explain`, `--llm-model`): structured failure evidence is sent to the Anthropic Messages API via the standard library (no new dependencies) and rendered as an advisory section; missing keys or request failures degrade gracefully without affecting the audit.
+- Optional LLM analysis layer (`--llm-explain`, `--llm-provider`, `--llm-model`, `--llm-base-url`): structured failure evidence is sent to the Anthropic API or any OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Zhipu, Moonshot, local Ollama/vLLM) via the standard library (no new dependencies) and rendered as an advisory section; missing keys or request failures degrade gracefully without affecting the audit.
 - Import-graph localization for assertion failures whose traceback never leaves test code: the failing test module's imports and calls are resolved with AST (including one level of package re-exports) to point patch targets at implementation definitions. Verified against the real-world evaluation: the tabulate and more-itertools assertion cases moved from test-helper misses to upstream-fix hits.
 
 ## 0.1.0 - 2026-06-10

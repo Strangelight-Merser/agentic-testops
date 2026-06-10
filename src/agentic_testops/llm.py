@@ -5,9 +5,12 @@ Design constraints:
 - The deterministic pipeline never depends on this module's success. No API
   key, a network error, or an unparseable model response all degrade to the
   plain report instead of failing the audit.
-- No third-party dependency: the Anthropic Messages API is called with the
-  standard library. The HTTP transport is injectable so tests never touch the
-  network.
+- Provider-neutral: the Anthropic Messages API and any OpenAI-compatible
+  Chat Completions endpoint (OpenAI, DeepSeek, Qwen/DashScope, Zhipu,
+  Moonshot, local Ollama or vLLM, ...) are both supported, selected with
+  ``--llm-provider`` and ``--llm-base-url``.
+- No third-party dependency: requests are sent with the standard library. The
+  HTTP transport is injectable so tests never touch the network.
 - The model receives only failure evidence already present in the report
   (node IDs, headlines, evidence lines, patch targets), not project source.
 """
@@ -23,13 +26,27 @@ from typing import Any
 
 from .models import AuditReport, LlmExplanation
 
-API_URL = "https://api.anthropic.com/v1/messages"
-API_VERSION = "2023-06-01"
-DEFAULT_MODEL = "claude-haiku-4-5"
+PROVIDER_ANTHROPIC = "anthropic"
+PROVIDER_OPENAI = "openai"
+PROVIDER_AUTO = "auto"
+PROVIDERS = (PROVIDER_AUTO, PROVIDER_ANTHROPIC, PROVIDER_OPENAI)
+
+ANTHROPIC_BASE_URL = "https://api.anthropic.com"
+ANTHROPIC_API_VERSION = "2023-06-01"
+OPENAI_BASE_URL = "https://api.openai.com/v1"
+
+DEFAULT_MODELS = {
+    PROVIDER_ANTHROPIC: "claude-haiku-4-5",
+    PROVIDER_OPENAI: "gpt-4o-mini",
+}
+API_KEY_ENV_VARS = {
+    PROVIDER_ANTHROPIC: "ANTHROPIC_API_KEY",
+    PROVIDER_OPENAI: "OPENAI_API_KEY",
+}
 DEFAULT_TIMEOUT = 60
 MAX_TOKENS = 2000
 
-Transport = Callable[[dict[str, Any], str, int], dict[str, Any]]
+Transport = Callable[[str, dict[str, Any], dict[str, str], int], dict[str, Any]]
 
 _SYSTEM_PROMPT = (
     "You are a senior Python engineer reviewing a structured pytest failure report. "
@@ -40,10 +57,20 @@ _SYSTEM_PROMPT = (
 )
 
 
+class MissingApiKeyError(RuntimeError):
+    pass
+
+
+class LlmRequestError(RuntimeError):
+    pass
+
+
 def explain_failures(
     report: AuditReport,
+    provider: str = PROVIDER_AUTO,
     api_key: str | None = None,
-    model: str = DEFAULT_MODEL,
+    model: str | None = None,
+    base_url: str | None = None,
     timeout: int = DEFAULT_TIMEOUT,
     transport: Transport | None = None,
 ) -> list[LlmExplanation]:
@@ -52,32 +79,109 @@ def explain_failures(
     Raises ``MissingApiKeyError`` when no key is available so the CLI can
     print a clear skip notice; all other failures raise ``LlmRequestError``.
     """
-    api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-    if not api_key:
-        raise MissingApiKeyError("ANTHROPIC_API_KEY is not set")
+    provider, api_key = _resolve_provider(provider, api_key, base_url)
+    model = model or DEFAULT_MODELS[provider]
     if not report.diagnoses:
         return []
 
+    prompt = _render_prompt(report)
+    if provider == PROVIDER_ANTHROPIC:
+        url, payload, headers = _anthropic_request(prompt, model, api_key, base_url)
+    else:
+        url, payload, headers = _openai_request(prompt, model, api_key, base_url)
+
+    send = transport if transport is not None else _http_transport
+    try:
+        response = send(url, payload, headers, timeout)
+    except (urllib.error.URLError, OSError, ValueError) as exc:
+        raise LlmRequestError(f"LLM request failed: {exc}") from exc
+
+    text = (
+        _anthropic_response_text(response)
+        if provider == PROVIDER_ANTHROPIC
+        else _openai_response_text(response)
+    )
+    return _parse_explanations(text, model)
+
+
+def _resolve_provider(provider: str, api_key: str | None, base_url: str | None) -> tuple[str, str]:
+    if provider not in PROVIDERS:
+        raise LlmRequestError(f"Unknown LLM provider: {provider} (expected one of {', '.join(PROVIDERS)})")
+
+    if provider == PROVIDER_AUTO:
+        if api_key:
+            # An explicit key without a provider implies the OpenAI-compatible
+            # protocol, which is what custom --llm-base-url endpoints speak.
+            return PROVIDER_OPENAI, api_key
+        if os.environ.get("ANTHROPIC_API_KEY") and not base_url:
+            return PROVIDER_ANTHROPIC, os.environ["ANTHROPIC_API_KEY"]
+        if os.environ.get("OPENAI_API_KEY"):
+            return PROVIDER_OPENAI, os.environ["OPENAI_API_KEY"]
+        if base_url:
+            # Local endpoints such as Ollama accept any placeholder key.
+            return PROVIDER_OPENAI, os.environ.get("LLM_API_KEY", "not-needed")
+        raise MissingApiKeyError("Neither ANTHROPIC_API_KEY nor OPENAI_API_KEY is set")
+
+    resolved = api_key or os.environ.get(API_KEY_ENV_VARS[provider], "")
+    if not resolved:
+        if provider == PROVIDER_OPENAI and base_url:
+            return provider, os.environ.get("LLM_API_KEY", "not-needed")
+        raise MissingApiKeyError(f"{API_KEY_ENV_VARS[provider]} is not set")
+    return provider, resolved
+
+
+def _anthropic_request(
+    prompt: str, model: str, api_key: str, base_url: str | None
+) -> tuple[str, dict[str, Any], dict[str, str]]:
+    url = f"{(base_url or ANTHROPIC_BASE_URL).rstrip('/')}/v1/messages"
     payload = {
         "model": model,
         "max_tokens": MAX_TOKENS,
         "system": _SYSTEM_PROMPT,
-        "messages": [{"role": "user", "content": _render_prompt(report)}],
+        "messages": [{"role": "user", "content": prompt}],
     }
-    send = transport if transport is not None else _http_transport
-    try:
-        response = send(payload, api_key, timeout)
-    except (urllib.error.URLError, OSError, ValueError) as exc:
-        raise LlmRequestError(f"LLM request failed: {exc}") from exc
-    return _parse_response(response, model)
+    headers = {
+        "content-type": "application/json",
+        "x-api-key": api_key,
+        "anthropic-version": ANTHROPIC_API_VERSION,
+    }
+    return url, payload, headers
 
 
-class MissingApiKeyError(RuntimeError):
-    pass
+def _openai_request(
+    prompt: str, model: str, api_key: str, base_url: str | None
+) -> tuple[str, dict[str, Any], dict[str, str]]:
+    url = f"{(base_url or OPENAI_BASE_URL).rstrip('/')}/chat/completions"
+    payload = {
+        "model": model,
+        "max_tokens": MAX_TOKENS,
+        "messages": [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ],
+    }
+    headers = {
+        "content-type": "application/json",
+        "authorization": f"Bearer {api_key}",
+    }
+    return url, payload, headers
 
 
-class LlmRequestError(RuntimeError):
-    pass
+def _anthropic_response_text(response: dict[str, Any]) -> str:
+    return "".join(
+        block.get("text", "")
+        for block in response.get("content", [])
+        if isinstance(block, dict) and block.get("type") == "text"
+    ).strip()
+
+
+def _openai_response_text(response: dict[str, Any]) -> str:
+    choices = response.get("choices", [])
+    if not choices or not isinstance(choices[0], dict):
+        return ""
+    message = choices[0].get("message", {})
+    content = message.get("content", "") if isinstance(message, dict) else ""
+    return str(content).strip()
 
 
 def _render_prompt(report: AuditReport) -> str:
@@ -110,15 +214,11 @@ def _render_prompt(report: AuditReport) -> str:
     )
 
 
-def _http_transport(payload: dict[str, Any], api_key: str, timeout: int) -> dict[str, Any]:
+def _http_transport(url: str, payload: dict[str, Any], headers: dict[str, str], timeout: int) -> dict[str, Any]:
     request = urllib.request.Request(
-        API_URL,
+        url,
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "content-type": "application/json",
-            "x-api-key": api_key,
-            "anthropic-version": API_VERSION,
-        },
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -126,12 +226,7 @@ def _http_transport(payload: dict[str, Any], api_key: str, timeout: int) -> dict
         return result
 
 
-def _parse_response(response: dict[str, Any], model: str) -> list[LlmExplanation]:
-    text = "".join(
-        block.get("text", "")
-        for block in response.get("content", [])
-        if isinstance(block, dict) and block.get("type") == "text"
-    ).strip()
+def _parse_explanations(text: str, model: str) -> list[LlmExplanation]:
     if not text:
         raise LlmRequestError("LLM response contained no text content")
 

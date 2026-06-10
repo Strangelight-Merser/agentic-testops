@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from pathlib import Path
 
 import pytest
@@ -10,7 +11,6 @@ from agentic_testops.llm import (
     explain_failures,
 )
 from agentic_testops.models import AuditReport, Diagnosis, Failure, LlmExplanation, TestRun
-from agentic_testops.reporter import render_markdown
 
 
 def _report() -> AuditReport:
@@ -42,100 +42,169 @@ def _report() -> AuditReport:
     )
 
 
+_EXPLANATION_JSON = json.dumps(
+    [
+        {
+            "nodeid": "tests/test_app.py::test_case",
+            "explanation": "The implementation returns 'a' but the test expects 'b'.",
+            "fix_outline": "Update the return value computation.",
+        }
+    ]
+)
+
+
 def _anthropic_response(text: str) -> dict:
     return {"content": [{"type": "text", "text": text}]}
 
 
-def test_explain_failures_parses_json_response() -> None:
+def _openai_response(text: str) -> dict:
+    return {"choices": [{"message": {"role": "assistant", "content": text}}]}
+
+
+def test_anthropic_provider_request_and_parse() -> None:
     captured = {}
 
-    def fake_transport(payload, api_key, timeout):
-        captured["payload"] = payload
-        captured["api_key"] = api_key
-        return _anthropic_response(
-            json.dumps(
-                [
-                    {
-                        "nodeid": "tests/test_app.py::test_case",
-                        "explanation": "The implementation returns 'a' but the test expects 'b'.",
-                        "fix_outline": "Update the return value computation.",
-                    }
-                ]
-            )
-        )
+    def fake_transport(url, payload, headers, timeout):
+        captured.update(url=url, payload=payload, headers=headers)
+        return _anthropic_response(_EXPLANATION_JSON)
 
-    explanations = explain_failures(_report(), api_key="key-123", transport=fake_transport)
+    explanations = explain_failures(
+        _report(), provider="anthropic", api_key="key-123", transport=fake_transport
+    )
 
-    assert captured["api_key"] == "key-123"
+    assert captured["url"] == "https://api.anthropic.com/v1/messages"
+    assert captured["headers"]["x-api-key"] == "key-123"
     assert "tests/test_app.py::test_case" in captured["payload"]["messages"][0]["content"]
-    assert explanations == [
-        LlmExplanation(
-            failure_nodeid="tests/test_app.py::test_case",
-            explanation="The implementation returns 'a' but the test expects 'b'. Fix: Update the return value computation.",
-            model="claude-haiku-4-5",
-        )
-    ]
+    assert explanations[0].failure_nodeid == "tests/test_app.py::test_case"
+    assert explanations[0].explanation.endswith("Fix: Update the return value computation.")
+    assert explanations[0].model == "claude-haiku-4-5"
 
 
-def test_explain_failures_requires_api_key(monkeypatch) -> None:
+def test_openai_provider_request_and_parse() -> None:
+    captured = {}
+
+    def fake_transport(url, payload, headers, timeout):
+        captured.update(url=url, payload=payload, headers=headers)
+        return _openai_response(_EXPLANATION_JSON)
+
+    explanations = explain_failures(
+        _report(), provider="openai", api_key="sk-test", model="deepseek-chat", transport=fake_transport
+    )
+
+    assert captured["url"] == "https://api.openai.com/v1/chat/completions"
+    assert captured["headers"]["authorization"] == "Bearer sk-test"
+    assert captured["payload"]["model"] == "deepseek-chat"
+    assert captured["payload"]["messages"][0]["role"] == "system"
+    assert explanations[0].model == "deepseek-chat"
+
+
+def test_custom_base_url_targets_compatible_endpoint() -> None:
+    captured = {}
+
+    def fake_transport(url, payload, headers, timeout):
+        captured["url"] = url
+        return _openai_response(_EXPLANATION_JSON)
+
+    explain_failures(
+        _report(),
+        provider="openai",
+        api_key="sk-test",
+        base_url="https://api.deepseek.com",
+        transport=fake_transport,
+    )
+
+    assert captured["url"] == "https://api.deepseek.com/chat/completions"
+
+
+def test_local_endpoint_needs_no_api_key(monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    captured = {}
+
+    def fake_transport(url, payload, headers, timeout):
+        captured["url"] = url
+        return _openai_response(_EXPLANATION_JSON)
+
+    explanations = explain_failures(
+        _report(), base_url="http://localhost:11434/v1", transport=fake_transport
+    )
+
+    assert captured["url"] == "http://localhost:11434/v1/chat/completions"
+    assert explanations
+
+
+def test_auto_provider_prefers_anthropic_env(monkeypatch) -> None:
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "anth-key")
+    monkeypatch.setenv("OPENAI_API_KEY", "open-key")
+    captured = {}
+
+    def fake_transport(url, payload, headers, timeout):
+        captured["headers"] = headers
+        return _anthropic_response(_EXPLANATION_JSON)
+
+    explain_failures(_report(), transport=fake_transport)
+
+    assert captured["headers"]["x-api-key"] == "anth-key"
+
+
+def test_auto_provider_falls_back_to_openai_env(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "open-key")
+    captured = {}
+
+    def fake_transport(url, payload, headers, timeout):
+        captured["headers"] = headers
+        return _openai_response(_EXPLANATION_JSON)
+
+    explain_failures(_report(), transport=fake_transport)
+
+    assert captured["headers"]["authorization"] == "Bearer open-key"
+
+
+def test_missing_api_key_raises(monkeypatch) -> None:
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     with pytest.raises(MissingApiKeyError):
         explain_failures(_report())
 
 
-def test_explain_failures_keeps_prose_when_model_ignores_json() -> None:
-    def fake_transport(payload, api_key, timeout):
-        return _anthropic_response("The failure looks like a simple value mismatch.")
+def test_unknown_provider_rejected() -> None:
+    with pytest.raises(LlmRequestError):
+        explain_failures(_report(), provider="gemini", api_key="key")
 
-    explanations = explain_failures(_report(), api_key="key", transport=fake_transport)
 
-    assert len(explanations) == 1
+def test_prose_response_is_kept() -> None:
+    def fake_transport(url, payload, headers, timeout):
+        return _openai_response("The failure looks like a simple value mismatch.")
+
+    explanations = explain_failures(_report(), provider="openai", api_key="key", transport=fake_transport)
+
     assert explanations[0].failure_nodeid == "(entire report)"
     assert "value mismatch" in explanations[0].explanation
 
 
-def test_explain_failures_rejects_empty_response() -> None:
-    def fake_transport(payload, api_key, timeout):
-        return {"content": []}
+def test_empty_response_rejected() -> None:
+    def fake_transport(url, payload, headers, timeout):
+        return {"choices": []}
 
     with pytest.raises(LlmRequestError):
-        explain_failures(_report(), api_key="key", transport=fake_transport)
+        explain_failures(_report(), provider="openai", api_key="key", transport=fake_transport)
 
 
-def test_explain_failures_parses_fenced_json() -> None:
+def test_fenced_json_response_parsed() -> None:
     fenced = '```json\n[{"nodeid": "n", "explanation": "x", "fix_outline": ""}]\n```'
 
-    def fake_transport(payload, api_key, timeout):
+    def fake_transport(url, payload, headers, timeout):
         return _anthropic_response(fenced)
 
-    explanations = explain_failures(_report(), api_key="key", transport=fake_transport)
+    explanations = explain_failures(_report(), provider="anthropic", api_key="key", transport=fake_transport)
 
     assert explanations[0].failure_nodeid == "n"
     assert explanations[0].explanation == "x"
 
 
-def test_markdown_report_renders_llm_section() -> None:
-    report = _report()
-    from dataclasses import replace
-
-    report = replace(
-        report,
-        llm_explanations=[
-            LlmExplanation(failure_nodeid="tests/test_app.py::test_case", explanation="Root cause.", model="m")
-        ],
-    )
-
-    text = render_markdown(report)
-
-    assert "## LLM Analysis" in text
-    assert "Advisory analysis generated by `m`" in text
-    assert "Root cause." in text
-
-
 def test_json_report_includes_llm_explanations() -> None:
-    from dataclasses import replace
-
     report = replace(
         _report(),
         llm_explanations=[LlmExplanation(failure_nodeid="n", explanation="e", model="m")],
@@ -146,20 +215,21 @@ def test_json_report_includes_llm_explanations() -> None:
     assert payload["llm_explanations"] == [{"failure_nodeid": "n", "explanation": "e", "model": "m"}]
 
 
+def _fake_failing_run(project_path: Path, extra_args=None, timeout=120) -> TestRun:
+    return TestRun(
+        command=["python", "-m", "pytest"],
+        cwd=project_path,
+        returncode=1,
+        stdout="FAILED tests/test_app.py::test_case - AssertionError: assert False\n",
+        stderr="",
+        duration_seconds=0.1,
+    )
+
+
 def test_cli_skips_llm_analysis_without_api_key(monkeypatch, tmp_path, capsys) -> None:
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-
-    def fake_run_pytest(project_path: Path, extra_args=None, timeout=120):
-        return TestRun(
-            command=["python", "-m", "pytest"],
-            cwd=project_path,
-            returncode=1,
-            stdout="FAILED tests/test_app.py::test_case - AssertionError: assert False\n",
-            stderr="",
-            duration_seconds=0.1,
-        )
-
-    monkeypatch.setattr(cli, "run_pytest", fake_run_pytest)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setattr(cli, "run_pytest", _fake_failing_run)
 
     exit_code = cli.main(["audit", str(tmp_path), "--llm-explain", "-o", str(tmp_path / "report.md")])
 
@@ -168,21 +238,14 @@ def test_cli_skips_llm_analysis_without_api_key(monkeypatch, tmp_path, capsys) -
     assert "## LLM Analysis" not in (tmp_path / "report.md").read_text(encoding="utf-8")
 
 
-def test_cli_includes_llm_analysis_with_fake_explainer(monkeypatch, tmp_path) -> None:
-    def fake_run_pytest(project_path: Path, extra_args=None, timeout=120):
-        return TestRun(
-            command=["python", "-m", "pytest"],
-            cwd=project_path,
-            returncode=1,
-            stdout="FAILED tests/test_app.py::test_case - AssertionError: assert False\n",
-            stderr="",
-            duration_seconds=0.1,
-        )
+def test_cli_renders_llm_analysis(monkeypatch, tmp_path) -> None:
+    def fake_explain(report, provider="auto", model=None, base_url=None):
+        assert provider == "openai"
+        assert base_url == "https://api.deepseek.com"
+        resolved = model or "deepseek-chat"
+        return [LlmExplanation(failure_nodeid="tests/test_app.py::test_case", explanation="Why.", model=resolved)]
 
-    def fake_explain(report, model="claude-haiku-4-5"):
-        return [LlmExplanation(failure_nodeid="tests/test_app.py::test_case", explanation="Why.", model=model)]
-
-    monkeypatch.setattr(cli, "run_pytest", fake_run_pytest)
+    monkeypatch.setattr(cli, "run_pytest", _fake_failing_run)
     monkeypatch.setattr(cli, "explain_failures", fake_explain)
 
     exit_code = cli.main(
@@ -190,8 +253,10 @@ def test_cli_includes_llm_analysis_with_fake_explainer(monkeypatch, tmp_path) ->
             "audit",
             str(tmp_path),
             "--llm-explain",
-            "--llm-model",
-            "test-model",
+            "--llm-provider",
+            "openai",
+            "--llm-base-url",
+            "https://api.deepseek.com",
             "-o",
             str(tmp_path / "report.md"),
             "--json-output",
@@ -204,4 +269,4 @@ def test_cli_includes_llm_analysis_with_fake_explainer(monkeypatch, tmp_path) ->
     assert "## LLM Analysis" in report_text
     assert "Why." in report_text
     payload = json.loads((tmp_path / "report.json").read_text(encoding="utf-8"))
-    assert payload["llm_explanations"][0]["model"] == "test-model"
+    assert payload["llm_explanations"][0]["model"] == "deepseek-chat"
