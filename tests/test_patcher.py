@@ -201,3 +201,139 @@ def test_propose_patch_for_symbol_resolution_failure() -> None:
     assert proposals[0].target_file == "billing.py"
     assert proposals[0].target_line == 4
     assert "missing symbol" in proposals[0].action
+
+
+def _assertion_diagnosis(nodeid: str, file_path: str | None) -> Diagnosis:
+    failure = Failure(
+        nodeid=nodeid,
+        headline="AssertionError: assert 'a' == 'b'",
+        file_path=file_path,
+        line_number=10,
+        error_type="AssertionError",
+    )
+    return Diagnosis(
+        failure=failure,
+        category="behavioral-regression",
+        confidence="medium",
+        summary="Assertion failed.",
+    )
+
+
+def test_assertion_target_follows_from_import_to_package(tmp_path) -> None:
+    package = tmp_path / "renderlib"
+    package.mkdir()
+    (package / "__init__.py").write_text("def render(rows):\n    return ''\n", encoding="utf-8")
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "common.py").write_text("def assert_equal(a, b):\n    assert a == b\n", encoding="utf-8")
+    (tests_dir / "test_render.py").write_text(
+        "from renderlib import render\n"
+        "from tests.common import assert_equal\n\n"
+        "def test_render_table():\n"
+        "    result = render([1])\n"
+        "    assert_equal('expected', result)\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("tests/test_render.py::test_render_table", "tests/common.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "renderlib/__init__.py"
+    assert proposals[0].target_line == 1
+    assert proposals[0].confidence == "medium"
+    assert "imports" in proposals[0].rationale
+
+
+def test_assertion_target_resolves_module_attribute_calls(tmp_path) -> None:
+    (tmp_path / "mylib.py").write_text("X = 1\n\ndef calc(n):\n    return n\n", encoding="utf-8")
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_calc.py").write_text(
+        "import mylib\n\ndef test_calc():\n    assert mylib.calc(2) == 3\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("tests/test_calc.py::test_calc", "tests/test_calc.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "mylib.py"
+    assert proposals[0].target_line == 3
+
+
+def test_assertion_target_supports_src_layout(tmp_path) -> None:
+    package = tmp_path / "src" / "mypkg"
+    package.mkdir(parents=True)
+    (package / "__init__.py").write_text("def go():\n    return 0\n", encoding="utf-8")
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_go.py").write_text(
+        "from mypkg import go\n\ndef test_go():\n    assert go() == 1\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("tests/test_go.py::test_go", "tests/test_go.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "src/mypkg/__init__.py"
+    assert proposals[0].target_line == 1
+
+
+def test_assertion_target_keeps_implementation_frame_when_present(tmp_path) -> None:
+    diagnosis = _assertion_diagnosis("tests/test_app.py::test_case", "app.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "app.py"
+    assert proposals[0].target_line == 10
+
+
+def test_assertion_target_falls_back_when_unresolvable(tmp_path) -> None:
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_unknown.py").write_text(
+        "def test_unknown():\n    assert helper() == 1\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("tests/test_unknown.py::test_unknown", "tests/test_unknown.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "tests/test_unknown.py"
+    assert proposals[0].confidence == "low"
+
+
+def test_assertion_target_never_points_at_test_helpers(tmp_path) -> None:
+    tests_dir = tmp_path / "test"
+    tests_dir.mkdir()
+    (tests_dir / "common.py").write_text("def assert_equal(a, b):\n    assert a == b\n", encoding="utf-8")
+    (tests_dir / "test_only_helpers.py").write_text(
+        "from test.common import assert_equal\n\n"
+        "def test_helpers_only():\n"
+        "    assert_equal('a', 'b')\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("test/test_only_helpers.py::test_helpers_only", "test/common.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "test/common.py"
+    assert proposals[0].confidence == "low"
+
+
+def test_assertion_target_follows_package_reexports(tmp_path) -> None:
+    package = tmp_path / "biglib"
+    package.mkdir()
+    (package / "__init__.py").write_text("from .core import *\n", encoding="utf-8")
+    (package / "core.py").write_text("def combine(a, b):\n    return a + b\n", encoding="utf-8")
+    tests_dir = tmp_path / "tests"
+    tests_dir.mkdir()
+    (tests_dir / "test_combine.py").write_text(
+        "import biglib as bl\n\ndef test_combine():\n    assert bl.combine(1, 2) == 4\n",
+        encoding="utf-8",
+    )
+    diagnosis = _assertion_diagnosis("tests/test_combine.py::test_combine", "tests/test_combine.py")
+
+    proposals = propose_patches([diagnosis], project_path=tmp_path)
+
+    assert proposals[0].target_file == "biglib/core.py"
+    assert proposals[0].target_line == 1

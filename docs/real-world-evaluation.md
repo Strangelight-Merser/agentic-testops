@@ -36,9 +36,9 @@ python scripts/evaluate_real_world.py --workdir /tmp/ato-eval --output reports/r
 | Case | Upstream fix | Failures parsed | Category assigned | Localization vs. ground truth |
 | --- | --- | --- | --- | --- |
 | more-itertools `numeric_range.__reversed__` IndexError | [edb3346](https://github.com/more-itertools/more-itertools/commit/edb3346) | 1/1 | `data-shape` | Correct file (`more_itertools/more.py`); pointed at the raise site in `_get_by_index`, one frame below the fixed `__reversed__` method |
-| more-itertools `repeat` with iterator args | [be5793a](https://github.com/more-itertools/more-itertools/commit/be5793a) | 2/2 | `input-validation`, `behavioral-regression` | 1 of 2 correct: the ValueError failure landed inside the fixed `partial_product` validation; the assertion failure was blamed on the test file |
+| more-itertools `repeat` with iterator args | [be5793a](https://github.com/more-itertools/more-itertools/commit/be5793a) | 2/2 | `input-validation`, `behavioral-regression` | Round 1: 1 of 2 correct (the assertion failure was blamed on the test file). Round 2: both failures localize to the two functions the upstream fix changed (`gray_product`, `partial_product`) |
 | more-itertools `nth_combination_with_replacement` wrong exception | [06f3181](https://github.com/more-itertools/more-itertools/commit/06f3181) | 2/2 | `input-validation` | Both failures pointed at `more.py:4277`, inside the exact hunk the upstream fix changed |
-| tabulate asciidoc trailing whitespace | [3aa568c](https://github.com/astanin/python-tabulate/commit/3aa568c) | 3/3 | `behavioral-regression` | Miss: all three blamed the shared assert helper `test/common.py:10`; the real fix was in `tabulate/__init__.py` |
+| tabulate asciidoc trailing whitespace | [3aa568c](https://github.com/astanin/python-tabulate/commit/3aa568c) | 3/3 | `behavioral-regression` | Round 1: miss — all three blamed the shared assert helper `test/common.py:10`. Round 2: all three localize to `tabulate/__init__.py` at the `tabulate()` entry point the tests call (the fix itself touched the private `_asciidoc_row` helper deeper in the same file) |
 | boltons with modern pytest (unmodified) | n/a | 0 (collection crash) | `collection-or-environment` | Correctly reported as an environment failure instead of crashing or inventing per-test diagnoses |
 
 Sample artifacts are kept in [`docs/real-world/`](real-world/).
@@ -58,17 +58,34 @@ Sample artifacts are kept in [`docs/real-world/`](real-world/).
   where `IndexError` was expected -- was classified `input-validation` with
   the patch target inside the real fix hunk.
 
+## Round 2: Closing the Localization Gap
+
+Round 1 exposed one systematic weakness: pure output-comparison assertions
+(`assert expected == actual`) raise inside test code, so the
+"deepest project frame" heuristic blamed shared test helpers. This was fixed
+with import-graph localization (`_locate_assertion_target` in `patcher.py`):
+when every traceback frame is test-like, the failing test module is parsed
+with AST, the calls made inside the failing test are matched against the
+module's imports, and the patch target is moved to the implementation
+definition — following one level of package re-exports such as
+`from .impl import *` in `__init__.py`.
+
+Re-running the same cases after the fix:
+
+- tabulate: all three assertion failures moved from `test/common.py:10` to
+  `tabulate/__init__.py` at the `tabulate()` definition the tests call.
+- more-itertools `repeat`: the assertion failure moved from the test file to
+  `more_itertools/more.py` at `gray_product` — one of the two functions the
+  upstream fix actually changed, reached through the package's `import *`
+  re-export.
+
+The remaining honest caveat: entry-point granularity. When the real defect is
+in a private helper (`_asciidoc_row`) called by the public entry point, the
+localizer stops at the function the test names. Correct file, correct call
+chain root, but not always the exact fixed line.
+
 ## What Did Not Hold Up
 
-- **Pure output-comparison assertions defeat frame-based localization.** When
-  a test asserts `expected == actual` on a computed string (tabulate), the
-  traceback contains only test frames, so the "deepest project frame"
-  heuristic blames the shared assert helper. The category is still correct,
-  but the patch target is useless. A fix would need import-graph analysis from
-  the failing test module to candidate implementation modules.
-- **Multi-bug commits dilute attribution.** The `repeat` case reverted a
-  commit containing two distinct fixes; the assertion-style failure was
-  attributed to the test file rather than the implementation.
 - **Category granularity is debatable on real bugs.** The IndexError
   regression was labeled `data-shape`; `behavioral-regression` would arguably
   describe it better. Categories assigned to real failures cluster heavily in
@@ -79,8 +96,11 @@ Sample artifacts are kept in [`docs/real-world/`](real-world/).
 
 On real repositories the pipeline is reliable as a *parser and triage layer*:
 it survives real pytest output, classifies failures into sensible coarse
-buckets, and localizes exception-bearing failures usefully. It is weak as a
-*repair planner* for assertion-style failures, which are the most common kind
-in mature projects. That boundary is now documented, tested against real
-ground truth, and is the primary input for the roadmap (import-graph
-localization, then an optional LLM layer over the structured report).
+buckets, and localizes exception-bearing failures usefully. Round 1 showed it
+was weak on assertion-style failures — the most common kind in mature
+projects — and that gap drove the import-graph localizer added in Round 2,
+which moved every previously misattributed target onto the implementation
+file the upstream fix touched. The remaining limits are entry-point
+granularity for defects in private helpers, and heuristic category labels;
+both are inputs for the next layer (an optional LLM pass over the structured
+report).

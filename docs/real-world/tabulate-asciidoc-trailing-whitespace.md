@@ -3,7 +3,7 @@
 - Project: `tabulate-asciidoc-trailing-whitespace`
 - Status: **FAIL**
 - Command: `python -m pytest --tb=short -q`
-- Duration: `1.10s`
+- Duration: `1.22s`
 - Return code: `1`
 - Parsed failures: `3`
 - Structured results: `JUnit XML`
@@ -65,28 +65,28 @@ Repair advice:
 
 ### 1. `test/test_output.py::test_asciidoc`
 
-- Target: `test/common.py:10`
-- Confidence: `low`
-- Action: Inspect the nearest project frame and make the smallest code change that satisfies the failing test contract.
-- Rationale: No higher-confidence domain rule matched this failure, so the proposal stays conservative.
+- Target: `tabulate/__init__.py:1701`
+- Confidence: `medium`
+- Action: Adjust the implementation under test until the failing assertion's expected value holds.
+- Rationale: Traceback frames stay inside test code, so the target was localized by following the failing test module's imports to the implementation it exercises.
 - Guardrail tests:
   - `test/test_output.py::test_asciidoc`
 
 ### 2. `test/test_output.py::test_asciidoc_headerless`
 
-- Target: `test/common.py:10`
-- Confidence: `low`
-- Action: Inspect the nearest project frame and make the smallest code change that satisfies the failing test contract.
-- Rationale: No higher-confidence domain rule matched this failure, so the proposal stays conservative.
+- Target: `tabulate/__init__.py:1701`
+- Confidence: `medium`
+- Action: Adjust the implementation under test until the failing assertion's expected value holds.
+- Rationale: Traceback frames stay inside test code, so the target was localized by following the failing test module's imports to the implementation it exercises.
 - Guardrail tests:
   - `test/test_output.py::test_asciidoc_headerless`
 
 ### 3. `test/test_regression.py::test_asciidoc_without_trailing_whitespace`
 
-- Target: `test/common.py:10`
-- Confidence: `low`
-- Action: Inspect the nearest project frame and make the smallest code change that satisfies the failing test contract.
-- Rationale: No higher-confidence domain rule matched this failure, so the proposal stays conservative.
+- Target: `tabulate/__init__.py:1701`
+- Confidence: `medium`
+- Action: Adjust the implementation under test until the failing assertion's expected value holds.
+- Rationale: Traceback frames stay inside test code, so the target was localized by following the failing test module's imports to the implementation it exercises.
 - Guardrail tests:
   - `test/test_regression.py::test_asciidoc_without_trailing_whitespace`
 
@@ -142,5 +142,5 @@ Got:
 FAILED test/test_output.py::test_asciidoc - AssertionError
 FAILED test/test_output.py::test_asciidoc_headerless - AssertionError
 FAILED test/test_regression.py::test_asciidoc_without_trailing_whitespace - A...
-3 failed, 294 passed, 44 skipped in 0.98s
+3 failed, 294 passed, 44 skipped in 1.09s
 ```
