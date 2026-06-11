@@ -7,7 +7,7 @@ This walkthrough shows the full loop on the `service_health` example: failing te
 ```bash
 agentic-testops audit examples/service_health \
   --rerun-failures \
-  --suggest-fixes \
+  --apply-and-verify \
   -o reports/service-health-report.md \
   --json-output reports/service-health-report.json \
   --fix-output reports/service-health-fixes.patch
@@ -29,7 +29,7 @@ The example is intentionally broken, so the audit exits with code `1` while stil
 - [Machine-readable JSON](sample-service-health-report.json)
 - [Dry-run patch output](sample-service-health-fixes.patch)
 
-The dry-run patch contains three reviewable hunks. Applied to a temporary copy of `examples/service_health`, it turns the intentionally failing example into a passing test suite.
+The dry-run patch contains three reviewable hunks. With `--apply-and-verify`, the audit applies them to a temporary copy of `examples/service_health`, reruns the three guardrail tests and then the full suite there, and records the outcome in the report's Fix Verification section — for this example, a `fix-confirmed` verdict with the full suite passing. The original example stays broken on disk, as intended.
 
 ## Why It Matters
 

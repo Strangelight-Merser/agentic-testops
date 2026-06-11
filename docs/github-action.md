@@ -31,6 +31,7 @@ jobs:
           fix-output: reports/agentic-testops-fixes.patch
           rerun-failures: "true"
           suggest-fixes: "true"
+          apply-and-verify: "true"
           job-summary: "true"
           pytest-args: "tests -q"
 
@@ -51,6 +52,7 @@ Inputs:
 - `fix-output`: dry-run patch path, or empty to skip patch output.
 - `rerun-failures`: whether to rerun parsed failing node IDs.
 - `suggest-fixes`: whether to generate dry-run diff suggestions.
+- `apply-and-verify`: whether to apply the suggestions to a temporary copy of the project, rerun the guardrail tests and the full suite there, and record a `fix-confirmed` / `fix-ineffective` / `fix-regressed` / `patch-failed` verdict in the report. The audited project is never modified. Disabled by default because it roughly doubles pytest runtime.
 - `timeout`: pytest timeout in seconds.
 - `pytest-args`: extra pytest arguments parsed with Python `shlex`.
 - `fail-on-test-failure`: whether nonzero audit exit code should fail the action.

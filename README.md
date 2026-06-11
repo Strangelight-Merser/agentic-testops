@@ -13,7 +13,7 @@ The project focuses on the "implementation -> verification -> diagnosis -> impro
 ## 10-Second Demo
 
 ```bash
-agentic-testops audit examples/service_health --rerun-failures --suggest-fixes
+agentic-testops audit examples/service_health --rerun-failures --apply-and-verify
 ```
 
 | Raw failure | Structured diagnosis | Patch proposal target |
@@ -21,6 +21,8 @@ agentic-testops audit examples/service_health --rerun-failures --suggest-fixes
 | `FileNotFoundError` | `filesystem-boundary` | `service_health.py:9` |
 | `AttributeError` | `object-interface` | `service_health.py:15` |
 | `NameError` | `symbol-resolution` | `service_health.py:20` |
+
+The same run verifies its own patches in a temporary copy of the project: verdict **fix-confirmed**, full suite passing. The original project is never modified.
 
 See the [demo walkthrough](docs/demo-walkthrough.md), [Markdown report](docs/sample-service-health-report.md), and [machine-readable JSON](docs/sample-service-health-report.json).
 

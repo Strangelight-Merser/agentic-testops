@@ -3,7 +3,7 @@
 - Project: `examples/service_health`
 - Status: **FAIL**
 - Command: `python -m pytest --tb=short -q`
-- Duration: `0.13s`
+- Duration: `0.08s`
 - Return code: `1`
 - Parsed failures: `3`
 - Structured results: `JUnit XML`
@@ -12,7 +12,7 @@
 
 - Status: **FAIL**
 - Command: `python -m pytest --tb=short -q test_service_health.py::test_load_config_handles_missing_file test_service_health.py::test_display_name_accepts_dict_user test_service_health.py::test_invoice_total_sums_items_with_tax`
-- Duration: `0.13s`
+- Duration: `0.08s`
 
 ## Diagnosis
 
@@ -144,6 +144,14 @@ These diffs are review previews only. They are not applied automatically.
 +    subtotal = sum(item["amount"] for item in items)
 ```
 
+## Fix Verification
+
+The suggested patches were applied to a temporary copy of the project and pytest was rerun there. The original project was not modified.
+
+- Verdict: **fix-confirmed**
+- Guardrail tests (3): **PASS** in `0.07s`
+- Full suite: **PASS** in `0.07s`
+
 ## Raw Pytest Output
 
 ```text
@@ -152,25 +160,20 @@ FFF                                                                      [100%]
 ____________________ test_load_config_handles_missing_file _____________________
 test_service_health.py:7: in test_load_config_handles_missing_file
     assert load_config("missing.env") == {"raw": ""}
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
 service_health.py:9: in load_config
     raise FileNotFoundError(f"Missing config file: {config_path}")
 E   FileNotFoundError: Missing config file: missing.env
 _____________________ test_display_name_accepts_dict_user ______________________
 test_service_health.py:11: in test_display_name_accepts_dict_user
     assert display_name({"name": "ada lovelace"}) == "Ada Lovelace"
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 service_health.py:15: in display_name
     return user.name.title()
-           ^^^^^^^^^
 E   AttributeError: 'dict' object has no attribute 'name'
 ____________________ test_invoice_total_sums_items_with_tax ____________________
 test_service_health.py:15: in test_invoice_total_sums_items_with_tax
     assert invoice_total([{"amount": 10.0}, {"amount": 5.0}]) == 16.2
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 service_health.py:20: in invoice_total
     return subtotal + (subtotal * tax_rate)
-           ^^^^^^^^
 E   NameError: name 'subtotal' is not defined
 =========================== short test summary info ============================
 FAILED test_service_health.py::test_load_config_handles_missing_file - FileNo...

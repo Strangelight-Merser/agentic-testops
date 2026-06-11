@@ -8,7 +8,7 @@
     "-q"
   ],
   "returncode": 1,
-  "duration_seconds": 0.12959879099798854,
+  "duration_seconds": 0.08000595799967414,
   "passed": false,
   "timed_out": false,
   "junit_xml_available": true,
@@ -19,7 +19,7 @@
       "file_path": "service_health.py",
       "line_number": 9,
       "error_type": "FileNotFoundError",
-      "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
+      "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
     },
     {
       "nodeid": "test_service_health.py::test_display_name_accepts_dict_user",
@@ -27,7 +27,7 @@
       "file_path": "service_health.py",
       "line_number": 15,
       "error_type": "AttributeError",
-      "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:15: in display_name\n    return user.name.title()\n           ^^^^^^^^^\nE   AttributeError: 'dict' object has no attribute 'name'"
+      "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\nservice_health.py:15: in display_name\n    return user.name.title()\nE   AttributeError: 'dict' object has no attribute 'name'"
     },
     {
       "nodeid": "test_service_health.py::test_invoice_total_sums_items_with_tax",
@@ -35,7 +35,7 @@
       "file_path": "service_health.py",
       "line_number": 20,
       "error_type": "NameError",
-      "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\n           ^^^^^^^^\nE   NameError: name 'subtotal' is not defined"
+      "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\nE   NameError: name 'subtotal' is not defined"
     }
   ],
   "diagnoses": [
@@ -46,7 +46,7 @@
         "file_path": "service_health.py",
         "line_number": 9,
         "error_type": "FileNotFoundError",
-        "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
+        "detail": "test_service_health.py:7: in test_load_config_handles_missing_file\n    assert load_config(\"missing.env\") == {\"raw\": \"\"}\nservice_health.py:9: in load_config\n    raise FileNotFoundError(f\"Missing config file: {config_path}\")\nE   FileNotFoundError: Missing config file: missing.env"
       },
       "category": "filesystem-boundary",
       "confidence": "medium",
@@ -69,7 +69,7 @@
         "file_path": "service_health.py",
         "line_number": 15,
         "error_type": "AttributeError",
-        "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:15: in display_name\n    return user.name.title()\n           ^^^^^^^^^\nE   AttributeError: 'dict' object has no attribute 'name'"
+        "detail": "test_service_health.py:11: in test_display_name_accepts_dict_user\n    assert display_name({\"name\": \"ada lovelace\"}) == \"Ada Lovelace\"\nservice_health.py:15: in display_name\n    return user.name.title()\nE   AttributeError: 'dict' object has no attribute 'name'"
       },
       "category": "object-interface",
       "confidence": "medium",
@@ -92,7 +92,7 @@
         "file_path": "service_health.py",
         "line_number": 20,
         "error_type": "NameError",
-        "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\n           ^^^^^^^^\nE   NameError: name 'subtotal' is not defined"
+        "detail": "test_service_health.py:15: in test_invoice_total_sums_items_with_tax\n    assert invoice_total([{\"amount\": 10.0}, {\"amount\": 5.0}]) == 16.2\nservice_health.py:20: in invoice_total\n    return subtotal + (subtotal * tax_rate)\nE   NameError: name 'subtotal' is not defined"
       },
       "category": "symbol-resolution",
       "confidence": "medium",
@@ -144,6 +144,7 @@
       ]
     }
   ],
+  "flake_results": [],
   "fix_suggestions": [
     {
       "failure_nodeid": "test_service_health.py::test_load_config_handles_missing_file",
@@ -179,6 +180,51 @@
       ]
     }
   ],
+  "llm_explanations": [],
+  "verification": {
+    "verdict": "fix-confirmed",
+    "applied_suggestions": [
+      "test_service_health.py::test_load_config_handles_missing_file",
+      "test_service_health.py::test_display_name_accepts_dict_user",
+      "test_service_health.py::test_invoice_total_sums_items_with_tax"
+    ],
+    "guardrail_tests": [
+      "test_service_health.py::test_load_config_handles_missing_file",
+      "test_service_health.py::test_display_name_accepts_dict_user",
+      "test_service_health.py::test_invoice_total_sums_items_with_tax"
+    ],
+    "guardrail_run": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "--tb=short",
+        "-q",
+        "test_service_health.py::test_load_config_handles_missing_file",
+        "test_service_health.py::test_display_name_accepts_dict_user",
+        "test_service_health.py::test_invoice_total_sums_items_with_tax"
+      ],
+      "returncode": 0,
+      "duration_seconds": 0.07241337499726797,
+      "passed": true,
+      "timed_out": false
+    },
+    "full_run": {
+      "command": [
+        "python",
+        "-m",
+        "pytest",
+        "--tb=short",
+        "-q"
+      ],
+      "returncode": 0,
+      "duration_seconds": 0.07321950000186916,
+      "passed": true,
+      "timed_out": false
+    },
+    "new_failures": [],
+    "notes": []
+  },
   "rerun": {
     "command": [
       "python",
@@ -191,7 +237,7 @@
       "test_service_health.py::test_invoice_total_sums_items_with_tax"
     ],
     "returncode": 1,
-    "duration_seconds": 0.1271896249963902,
+    "duration_seconds": 0.07663579200016102,
     "passed": false,
     "timed_out": false,
     "junit_xml_available": true

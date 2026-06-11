@@ -26,6 +26,14 @@ inputs:
     description: Generate conservative dry-run unified diff suggestions.
     required: false
     default: "true"
+  apply-and-verify:
+    description: >-
+      Apply the dry-run fix suggestions to a temporary copy of the project, rerun the
+      guardrail tests and the full suite there, and record a fix-confirmed /
+      fix-ineffective / fix-regressed / patch-failed verdict. The audited project is
+      never modified.
+    required: false
+    default: "false"
   timeout:
     description: Pytest timeout in seconds.
     required: false
@@ -79,6 +87,7 @@ runs:
         AGENTIC_TESTOPS_FIX_OUTPUT: ${{ inputs.fix-output }}
         AGENTIC_TESTOPS_RERUN_FAILURES: ${{ inputs.rerun-failures }}
         AGENTIC_TESTOPS_SUGGEST_FIXES: ${{ inputs.suggest-fixes }}
+        AGENTIC_TESTOPS_APPLY_AND_VERIFY: ${{ inputs.apply-and-verify }}
         AGENTIC_TESTOPS_TIMEOUT: ${{ inputs.timeout }}
         AGENTIC_TESTOPS_PYTEST_ARGS: ${{ inputs.pytest-args }}
         AGENTIC_TESTOPS_FAIL_ON_TEST_FAILURE: ${{ inputs.fail-on-test-failure }}
@@ -100,6 +109,9 @@ runs:
         fi
         if [[ "$AGENTIC_TESTOPS_SUGGEST_FIXES" == "true" ]]; then
           args+=("--suggest-fixes")
+        fi
+        if [[ "$AGENTIC_TESTOPS_APPLY_AND_VERIFY" == "true" ]]; then
+          args+=("--apply-and-verify")
         fi
         if [[ -n "$AGENTIC_TESTOPS_JSON_OUTPUT" ]]; then
           args+=("--json-output" "$AGENTIC_TESTOPS_JSON_OUTPUT")

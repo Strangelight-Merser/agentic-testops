@@ -11,6 +11,7 @@ def test_action_metadata_exposes_core_inputs() -> None:
         "fix-output:",
         "rerun-failures:",
         "suggest-fixes:",
+        "apply-and-verify:",
         "fail-on-test-failure:",
         "job-summary:",
         "summary-written:",
