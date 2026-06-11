@@ -60,6 +60,7 @@ Agentic TestOps implements the first working slice of that loop, with determinis
 - Generates patch proposal objects with target file, suspected line, action, rationale, confidence, and guardrail tests.
 - Uses import-aware AST lookup to localize API-contract patch targets before falling back to a conservative project scan.
 - Generates conservative dry-run unified diff suggestions with `--suggest-fixes` or `--fix-output`; the service health demo patch applies cleanly to a temporary copy and makes its tests pass.
+- Closes the loop with `--apply-and-verify`: the suggested patches are applied to a temporary copy of the project, the guardrail tests and the full suite are rerun there, and the report records a `fix-confirmed`, `fix-ineffective`, `fix-regressed`, or `patch-failed` verdict. The original project is never modified.
 - Optional LLM analysis layer with `--llm-explain`: the structured failure evidence is sent to an LLM for advisory root-cause explanations rendered alongside the deterministic diagnosis. Works with the Anthropic API and any OpenAI-compatible endpoint (OpenAI, DeepSeek, Qwen, Zhipu, Moonshot, local Ollama/vLLM) via `--llm-provider` and `--llm-base-url`. Without an API key the audit runs unchanged and prints a skip notice. No extra dependencies.
 - Ships as a reusable GitHub Action for CI report generation.
 - Includes four deliberately failing example projects, including a deterministic shared-state flake.

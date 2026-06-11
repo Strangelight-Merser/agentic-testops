@@ -13,6 +13,7 @@ from .parser import parse_failures
 from .patcher import propose_patches
 from .reporter import write_json_report, write_markdown_report
 from .runner import run_pytest
+from .verifier import verify_fixes
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,6 +59,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="Generate conservative dry-run unified diff suggestions without modifying the target project.",
     )
     audit.add_argument(
+        "--apply-and-verify",
+        action="store_true",
+        help=(
+            "Apply the dry-run fix suggestions to a temporary copy of the project, rerun the "
+            "guardrail tests and the full suite there, and report a fix-confirmed / "
+            "fix-ineffective / fix-regressed verdict. The original project is never modified. "
+            "Implies --suggest-fixes."
+        ),
+    )
+    audit.add_argument(
         "--llm-explain",
         action="store_true",
         help=(
@@ -99,8 +110,19 @@ def main(argv: list[str] | None = None) -> int:
         failures = parse_failures(run)
         diagnoses = diagnose_failures(failures, run)
         patch_proposals = propose_patches(diagnoses, project_path=args.project)
-        should_suggest_fixes = args.suggest_fixes or args.fix_output is not None
+        should_suggest_fixes = args.suggest_fixes or args.fix_output is not None or args.apply_and_verify
         fix_suggestions = suggest_fixes(args.project, diagnoses, patch_proposals) if should_suggest_fixes else []
+        verification = None
+        if args.apply_and_verify and fix_suggestions:
+            verification = verify_fixes(
+                args.project,
+                fix_suggestions,
+                baseline_failures=failures,
+                extra_args=extra_args,
+                timeout=args.timeout,
+            )
+        elif args.apply_and_verify:
+            print("Fix verification skipped: no conservative fix suggestions were generated.")
         rerun = None
         if args.rerun_failures and failures:
             rerun_args = [*extra_args, *[failure.nodeid for failure in failures]]
@@ -123,6 +145,7 @@ def main(argv: list[str] | None = None) -> int:
             fix_suggestions=fix_suggestions,
             rerun=rerun,
             flake_results=flake_results,
+            verification=verification,
         )
         if args.llm_explain and failures:
             try:
@@ -150,6 +173,8 @@ def main(argv: list[str] | None = None) -> int:
             print(f"JSON report written to {args.json_output}")
         if args.fix_output:
             print(f"Dry-run fix suggestions written to {args.fix_output}")
+        if verification:
+            print(f"Fix verification verdict: {verification.verdict}")
         return 0 if run.passed else 1
     return 2
 

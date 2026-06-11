@@ -169,6 +169,36 @@ def render_markdown(report: AuditReport) -> str:
                 ]
             )
 
+    if report.verification:
+        verification = report.verification
+        lines.extend(
+            [
+                "## Fix Verification",
+                "",
+                "The suggested patches were applied to a temporary copy of the project and "
+                "pytest was rerun there. The original project was not modified.",
+                "",
+                f"- Verdict: **{verification.verdict}**",
+            ]
+        )
+        if verification.guardrail_run:
+            lines.append(
+                f"- Guardrail tests ({len(verification.guardrail_tests)}): "
+                f"**{_status(verification.guardrail_run)}** in `{verification.guardrail_run.duration_seconds:.2f}s`"
+            )
+        if verification.full_run:
+            lines.append(
+                f"- Full suite: **{_status(verification.full_run)}** "
+                f"in `{verification.full_run.duration_seconds:.2f}s`"
+            )
+        if verification.new_failures:
+            lines.append("- New failures introduced by the patches:")
+            for nodeid in verification.new_failures:
+                lines.append(f"  - `{nodeid}`")
+        for note in verification.notes:
+            lines.append(f"- Note: {note}")
+        lines.append("")
+
     lines.extend(
         [
             "## Raw Pytest Output",

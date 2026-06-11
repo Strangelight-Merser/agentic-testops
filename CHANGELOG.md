@@ -2,6 +2,12 @@
 
 All notable changes to Agentic TestOps are documented here.
 
+## Unreleased
+
+### Added
+
+- Closed-loop fix verification with `--apply-and-verify`: dry-run fix suggestions are applied to a temporary copy of the project, the guardrail tests and the full suite are rerun there, and the audit report records a `fix-confirmed`, `fix-ineffective`, `fix-regressed`, or `patch-failed` verdict with new-failure detection against the baseline run. Parsed node IDs that carry repository or absolute path prefixes are localized to the copied tree before the rerun. The audited project is never modified.
+
 ## 0.2.0 - 2026-06-10
 
 ### Added
